@@ -2,6 +2,7 @@ package entity.audio;
 
 
 import entity.math.Complex;
+import service.audio.AudioAnalysis;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -13,6 +14,7 @@ public class AudioSignal {
     public AudioSignal(int[][] samples, AudioFormat format) {
         this.samples = samples;
         this.format = format;
+        this.spectrum = AudioAnalysis.FFT32bit(samples[0]);
     }
 
     public int[][] getSamples() {
