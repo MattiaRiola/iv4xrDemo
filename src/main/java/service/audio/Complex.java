@@ -12,14 +12,6 @@ public class Complex {
         im = imag;
     }
 
-    // return a string representation of the invoking Complex object
-    public String toString() {
-        if (im == 0) return re + "";
-        if (re == 0) return im + "i";
-        if (im <  0) return re + " - " + (-im) + "i";
-        return re + " + " + im + "i";
-    }
-
     // return abs/modulus/magnitude
     public double abs() {
         return Math.hypot(re, im);
@@ -143,4 +135,8 @@ public class Complex {
         System.out.println("tan(a)       = " + a.tan());
     }
 
+    @Override
+    public String toString() {
+        return "("+re + " + " + im +"i"+")";
+    }
 }
