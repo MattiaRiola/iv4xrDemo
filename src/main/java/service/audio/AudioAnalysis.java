@@ -18,14 +18,18 @@ public class AudioAnalysis {
     public static AudioSignal readWavFile(String filePath) throws IOException, UnsupportedAudioFileException {
         File file = new File(filePath);
         AudioInputStream ais = AudioSystem.getAudioInputStream(file);
+        AudioFormat audioFormat = ais.getFormat();
         int frameLength = (int) ais.getFrameLength();
-        int frameSize = (int) ais.getFormat().getFrameSize();
+        int frameSize = (int) audioFormat.getFrameSize();
         byte[] eightBitByteArray = new byte[frameLength * frameSize];
+        if (audioFormat.getSampleSizeInBits() != 16 || audioFormat.getSampleRate() != 44100)
+            throw new UnsupportedAudioFileException("Audio " + file + " file must be 16bit and 44100Hz" + " but it is " + audioFormat);
+
 
         int result = ais.read(eightBitByteArray);
 
         int channels = ais.getFormat().getChannels();
-        int[][] samples = new int[channels][frameLength];
+        int[][] samples = new int[Math.max(channels, 2)][frameLength];
 
         int sampleIndex = 0;
         try {
@@ -41,6 +45,9 @@ public class AudioAnalysis {
                 }
                 sampleIndex++;
             }
+            if (audioFormat.getChannels() == 1)
+                samples[1] = samples[0].clone();
+
 
         } catch (Exception exp) {
 
