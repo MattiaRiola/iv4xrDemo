@@ -38,4 +38,20 @@ public class AudioSignal {
     public void setFormat(AudioFormat format) {
         this.format = format;
     }
+
+    @Override
+    public String toString() {
+        return "AudioSignal{" +
+                ", format=" + format +
+                '}';
+    }
+
+    public String getSamplesString() {
+        String str = "(";
+        for (int i = 0; i < samples.length; i++) {
+            str = str.concat("channel " + i + ": # samples: " + samples[i].length + ",");
+        }
+        str = str.concat(")");
+        return str;
+    }
 }
