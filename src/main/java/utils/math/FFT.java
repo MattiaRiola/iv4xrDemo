@@ -1,5 +1,7 @@
-package service.audio;
+package utils.math;
 
+
+import entity.math.Complex;
 
 /**
  *  The {@code FFT} class provides methods for computing the

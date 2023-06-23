@@ -1,10 +1,10 @@
-package service.audio;
+package utils.view;
 //import require classes and packages
+
+import entity.math.Complex;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.Ellipse2D;
-import java.awt.geom.Line2D;
 
 //Extends JPanel class
 public class PlotSpectrum2D extends JPanel{
@@ -33,10 +33,10 @@ public class PlotSpectrum2D extends JPanel{
 
 
     //main() method start
-    public static void plotSpectrum(Complex[][] spectrum){
+    public static void plotSpectrum(Complex[][] spectrum, String title) {
 
         //create an instance of JFrame class
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame(title);
         // set size, layout and location for frame.
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.add(new PlotSpectrum2D(spectrum, true));

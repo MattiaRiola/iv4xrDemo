@@ -5,7 +5,7 @@ import javax.sound.sampled.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import static service.audio.AudioConfig.getFormat;
+import static config.audio.AudioConfig.getDefaultFormat;
 
 public class AudioRecorder {
 
@@ -19,7 +19,7 @@ public class AudioRecorder {
 
     public AudioRecorder() {
         super();
-        this.format = getFormat();
+        this.format = getDefaultFormat();
     }
 
     public void run() {

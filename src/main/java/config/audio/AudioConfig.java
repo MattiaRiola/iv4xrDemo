@@ -1,4 +1,4 @@
-package service.audio;
+package config.audio;
 
 import javax.sound.sampled.AudioFormat;
 
@@ -14,7 +14,7 @@ public class AudioConfig {
      */
     public static int CHUNK_SIZE = 1024 * 8 * 2; //2KB (0.5seconds)
 
-    public static AudioFormat getFormat() {
+    public static AudioFormat getDefaultFormat() {
         float sampleRate = UPPER_LIMIT;
         int sampleSizeInBits = 8;
         int channels = 1; //mono

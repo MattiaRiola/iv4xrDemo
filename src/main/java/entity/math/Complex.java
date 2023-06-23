@@ -1,4 +1,4 @@
-package service.audio;
+package entity.math;
 
 import java.util.Objects;
 

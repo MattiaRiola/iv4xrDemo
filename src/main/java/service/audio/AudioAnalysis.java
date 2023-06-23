@@ -1,17 +1,21 @@
 package service.audio;
 
+import entity.audio.AudioSignal;
+import entity.math.Complex;
+import utils.math.FFT;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.*;
 
-import static service.audio.AudioConfig.*;
+import static config.audio.AudioConfig.*;
 
 public class AudioAnalysis {
     private Complex[][] results;
 
-    public static int[][] readWavFile(String filePath) throws IOException, UnsupportedAudioFileException {
+    public static AudioSignal readWavFile(String filePath) throws IOException, UnsupportedAudioFileException {
         File file = new File(filePath);
         AudioInputStream ais = AudioSystem.getAudioInputStream(file);
         int frameLength = (int) ais.getFrameLength();
@@ -43,7 +47,7 @@ public class AudioAnalysis {
             exp.printStackTrace();
 
         }
-        return samples;
+        return new AudioSignal(samples, ais.getFormat());
 
     }
 
@@ -79,6 +83,27 @@ public class AudioAnalysis {
             for (int i = 0; i < CHUNK_SIZE; i++) {
                 //Put the time domain data into a complex number with imaginary part as 0:
                 complex[i] = new Complex(audio[(times * CHUNK_SIZE) + i], 0);
+            }
+            //Perform FFT analysis on the chunk:
+            results[times] = FFT.fft(complex);
+        }
+        return results;
+    }
+
+    public static Complex[][] FFT32bit(int[] timeDomainSignal) {
+        final int totalSize = timeDomainSignal.length;
+
+        int amountPossible = totalSize / CHUNK_SIZE;
+
+        //When turning into frequency domain we'll need complex numbers:
+        Complex[][] results = new Complex[amountPossible][UPPER_LIMIT];
+
+        //For all the chunks:
+        for (int times = 0; times < amountPossible; times++) {
+            Complex[] complex = new Complex[CHUNK_SIZE];
+            for (int i = 0; i < CHUNK_SIZE; i++) {
+                //Put the time domain data into a complex number with imaginary part as 0:
+                complex[i] = new Complex(timeDomainSignal[(times * CHUNK_SIZE) + i], 0);
             }
             //Perform FFT analysis on the chunk:
             results[times] = FFT.fft(complex);

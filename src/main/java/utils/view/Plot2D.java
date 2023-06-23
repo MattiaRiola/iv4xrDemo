@@ -1,8 +1,10 @@
-package service.audio;
+package utils.view;
 //import require classes and packages
-import java.awt.*;
+
 import javax.swing.*;
-import java.awt.geom.*;
+import java.awt.*;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 
 //Extends JPanel class
 public class Plot2D extends JPanel{

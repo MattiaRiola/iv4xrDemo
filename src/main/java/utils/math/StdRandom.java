@@ -1,4 +1,4 @@
-package service.audio;
+package utils.math;
 
 import java.util.Random;
 
