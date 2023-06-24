@@ -7,14 +7,28 @@ import service.audio.AudioAnalysis;
 import javax.sound.sampled.AudioFormat;
 
 public class AudioSignal {
+    private String name;
     private int[][] samples;
     private Complex[][] spectrum;
     private AudioFormat format;
 
-    public AudioSignal(int[][] samples, AudioFormat format) {
+    private AudioFingerprint fingerprint;
+
+
+    public AudioSignal(String name, int[][] samples, AudioFormat format) {
+        this.name = name;
         this.samples = samples;
         this.format = format;
         this.spectrum = AudioAnalysis.FFT32bit(samples[0]);
+        this.fingerprint = AudioAnalysis.analyse(this);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public AudioFingerprint getFingerprint() {
+        return fingerprint;
     }
 
     public int[][] getSamples() {

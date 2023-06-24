@@ -1,5 +1,6 @@
 package service.audio;
 
+import entity.audio.AudioFingerprint;
 import entity.audio.AudioSignal;
 import entity.math.Complex;
 import utils.math.FFT;
@@ -9,13 +10,16 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 
 import static config.audio.AudioConfig.*;
 
 public class AudioAnalysis {
     private Complex[][] results;
 
-    public static AudioSignal readWavFile(String filePath) throws IOException, UnsupportedAudioFileException {
+    public static AudioSignal readWavFile(String filePath, String name) throws IOException, UnsupportedAudioFileException {
         File file = new File(filePath);
         AudioInputStream ais = AudioSystem.getAudioInputStream(file);
         AudioFormat audioFormat = ais.getFormat();
@@ -36,12 +40,26 @@ public class AudioAnalysis {
 
             for (int t = 0; t < eightBitByteArray.length; ) {
                 for (int channel = 0; channel < channels; channel++) {
-                    int low = (int) eightBitByteArray[t];
-                    t++;
-                    int high = (int) eightBitByteArray[t];
-                    t++;
-                    int sample = getSixteenBitSample(high, low);
-                    samples[channel][sampleIndex] = sample;
+                    if (ais.getFormat().isBigEndian()) {
+                        int low = eightBitByteArray[t];
+                        t++;
+                        int high = eightBitByteArray[t];
+                        t++;
+                        int sample = getSixteenBitSample(high, low);
+                        samples[channel][sampleIndex] = sample;
+                    } else {
+                        int low = eightBitByteArray[t];
+                        //byte low =  reverseBitsByte(eightBitByteArray[t]);
+
+                        t++;
+                        int high = eightBitByteArray[t];
+                        //byte high = reverseBitsByte(eightBitByteArray[t]);
+                        t++;
+
+                        int sample = getSixteenBitSample(high, low);
+                        samples[channel][sampleIndex] = sample;
+                    }
+
                 }
                 sampleIndex++;
             }
@@ -54,7 +72,7 @@ public class AudioAnalysis {
             exp.printStackTrace();
 
         }
-        return new AudioSignal(samples, ais.getFormat());
+        return new AudioSignal(name, samples, ais.getFormat());
 
     }
 
@@ -62,6 +80,17 @@ public class AudioAnalysis {
         return (high << 8) + (low & 0x00ff);
     }
 
+    public static byte reverseBitsByte(byte x) {
+        int intSize = 8;
+        byte y = 0;
+        for (int position = intSize - 1; position > 0; position--) {
+            y += ((x & 1) << position);
+            x >>= 1;
+        }
+        return y;
+    }
+
+    @Deprecated
     public static byte[] readAudio(String filePath, AudioFormat format) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BufferedInputStream in = new BufferedInputStream(new FileInputStream(filePath));
@@ -97,7 +126,9 @@ public class AudioAnalysis {
         return results;
     }
 
-    public static Complex[][] FFT32bit(int[] timeDomainSignal) {
+    public static Complex[][] FFT32bit(int[] timeDomainSignalInt) {
+        byte[] timeDomainSignal = fromIntArrayToByteArray(timeDomainSignalInt);
+
         final int totalSize = timeDomainSignal.length;
 
         int amountPossible = totalSize / CHUNK_SIZE;
@@ -118,14 +149,14 @@ public class AudioAnalysis {
         return results;
     }
 
-    /**
-     * hash evaluation using 4 points
-     */
-    private long hash(long p1, long p2, long p3, long p4) {
-        return (p4 - (p4 % FUZ_FACTOR)) * 100000000 + (p3 - (p3 % FUZ_FACTOR))
-                * 100000 + (p2 - (p2 % FUZ_FACTOR)) * 100
-                + (p1 - (p1 % FUZ_FACTOR));
+    private static byte[] fromIntArrayToByteArray(int[] timeDomainSignalInt) {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(timeDomainSignalInt.length * 4);
+        IntBuffer intBuffer = byteBuffer.order(ByteOrder.BIG_ENDIAN).asIntBuffer();
+        intBuffer.put(timeDomainSignalInt);
+
+        return byteBuffer.array();
     }
+
 
     //Find out in which range
     public static int getIndex(int freq) {
@@ -134,12 +165,17 @@ public class AudioAnalysis {
         return i;
     }
 
-    public static void analyse(Complex[][] audioSpectrum) throws IOException {
-        FileWriter fw = new FileWriter("./points.txt");
-        double[][] highScores = new double[audioSpectrum.length][UPPER_LIMIT];
-        double[][] recordPoints = new double[audioSpectrum.length][UPPER_LIMIT];
+    public static AudioFingerprint analyse(AudioSignal audio) {
+        Complex[][] audioSpectrum = audio.getSpectrum();
+
+        if (audioSpectrum == null) {
+            audioSpectrum = FFT32bit(audio.getSamples()[0]);
+            audio.setSpectrum(audioSpectrum);
+        }
+        double[][] highScores = new double[audioSpectrum.length][RANGE.length];
+        double[][] relatedFrequencies = new double[audioSpectrum.length][RANGE.length];
         for (int t = 0; t < audioSpectrum.length; t++) {
-            for (int freq = LOWER_LIMIT; freq < UPPER_LIMIT - 1; freq++) {
+            for (int freq = LOWER_LIMIT; freq < audioSpectrum[t].length; freq++) {
                 //Get the magnitude:
                 double mag = Math.log(audioSpectrum[t][freq].abs() + 1);
 
@@ -149,9 +185,11 @@ public class AudioAnalysis {
                 //Save the highest magnitude and corresponding frequency:
                 if (mag > highScores[t][index]) {
                     highScores[t][index] = mag;
-                    recordPoints[t][index] = freq;
+                    relatedFrequencies[t][index] = freq;
                 }
             }
+
         }
+        return new AudioFingerprint(highScores, relatedFrequencies);
     }
 }
