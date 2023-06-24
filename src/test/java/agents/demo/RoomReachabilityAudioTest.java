@@ -85,9 +85,9 @@ public class RoomReachabilityAudioTest {
 
 	/**
 	 * A test to verify that the east closet is reachable.
-     */
-    @Test
-    public void closetReachableTest() throws InterruptedException {
+	 */
+	@Test
+	public void gameplayAudioTestDingAndFiresizzleTest() throws InterruptedException {
 
 		var buttonToTest = "button1";
 		var doorToTest = "door1";
