@@ -10,13 +10,14 @@ package game;
 import environments.LabRecruitsEnvironment;
 import helperclasses.Util;
 import logger.PrintColor;
+
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class LabRecruitsTestServer {
-
+    String pythonScriptPath;
     private Process server;
     private Process audioRecorder;
 
@@ -31,33 +32,31 @@ public class LabRecruitsTestServer {
 
     public LabRecruitsTestServer(boolean useGraphics, Integer chunkLenght, String redirectPath) {
         start(useGraphics, redirectPath);
-        String userDir = System.getProperty("user.dir") ;
-        String pythonScriptPath = Paths.get(userDir, "src/test/python/audio_recorder.py").toAbsolutePath().toString();
+        String userDir = System.getProperty("user.dir");
+        pythonScriptPath = Paths.get(userDir, "src/test/python/audio_recorder.py").toAbsolutePath().toString();
         Util.verifyPath(pythonScriptPath);
 
+        waitFor(Process::isAlive);
+
+    }
+
+    public void startRecording() throws IOException {
         if (audioRecorder != null && audioRecorder.isAlive())
             throw new IllegalCallerException("The current server is still running. Close the server first by calling Close();");
 
-        try {
-            System.out.println("Starting python audio recorder... ");
-            ProcessBuilder pb = new ProcessBuilder("python", pythonScriptPath);
+        System.out.println("Starting python audio recorder... ");
+        ProcessBuilder pb = new ProcessBuilder("python", pythonScriptPath);
+        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        audioRecorder = pb.start();
+        System.out.println("Python audio recorder started");
 
-            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-
-            audioRecorder = pb.start();
-            waitFor(Process::isAlive);
-            System.out.println("Python audio recorder started");
-
-        } catch (IOException e) {
-            System.out.println(PrintColor.FAILURE() + ": Cannot start LabRecruits server!\n" + e.getMessage());
-        }
     }
 
     private void start(Boolean useGraphics, String binaryPath) {
         // try to start the server
 
-        if(Platform.isLinux())
+        if (Platform.isLinux())
             useGraphics = false;
 
         Util.verifyPath(binaryPath);

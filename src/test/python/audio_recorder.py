@@ -17,14 +17,14 @@ if input_device_index is None:
 
 NUM_SAMPLES_TO_RECORD = 10
 
-chunk = 1024  # Record in chunks of 1024 samples
+chunk = 44100  # Record in chunks of 1024 samples
 sample_format = pyaudio.paInt16  # 16 bits per sample
 channels = 2
 fs = 44100  # Record at 44100 samples per second
-seconds = 4
+seconds = 5
 
 for i in range(NUM_SAMPLES_TO_RECORD):
-    filename = f"./tmp/output_record_{i}.wav"
+    filename = f"./src/test/resources/audio/game/records/output_record_{i}.wav"
 
     p = pyaudio.PyAudio()  # Create an interface to PortAudio
 

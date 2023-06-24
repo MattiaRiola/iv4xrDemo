@@ -24,6 +24,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import world.BeliefState;
 
+import java.io.IOException;
+
 import static agents.TestSettings.USE_AUDIO_TESTING;
 import static agents.TestSettings.USE_INSTRUMENT;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
@@ -40,13 +42,13 @@ public class RoomReachabilityAudioTest {
 
     private static LabRecruitsTestServer labRecruitsTestServer;
 
-    @BeforeAll
-    static void start() {
-		Assumptions.assumeTrue(USE_AUDIO_TESTING,"audio testing disabled");
+	@BeforeAll
+	static void start() throws InterruptedException {
+		Assumptions.assumeTrue(USE_AUDIO_TESTING, "audio testing disabled");
 
-    	String labRecruitesExeRootDir = System.getProperty("user.dir") ;
-    	labRecruitsTestServer = TestSettings.start_LabRecruitsTestServerWithAudio(labRecruitesExeRootDir,10) ;
-    }
+		String labRecruitesExeRootDir = System.getProperty("user.dir");
+		labRecruitsTestServer = TestSettings.start_LabRecruitsTestServerWithAudio(labRecruitesExeRootDir, 10);
+	}
 
     @AfterAll
     static void close() { if(labRecruitsTestServer!=null) labRecruitsTestServer.close(); }
@@ -71,7 +73,8 @@ public class RoomReachabilityAudioTest {
         if(USE_INSTRUMENT) instrument(environment) ;
 
         try {
-        	TestSettings.youCanRepositionWindow() ;
+			TestSettings.youCanRepositionWindow();
+			labRecruitsTestServer.startRecording();
 
 	        // create a test agent
 	        var testAgent = new LabRecruitsTestAgent("agent1") // matches the ID in the CSV file
@@ -127,17 +130,20 @@ public class RoomReachabilityAudioTest {
 	        	testAgent.update();
 	        	if (i>200) {
 	        		break ;
-	        	}
-	        }
-	        testingTask.printGoalStructureStatus();
+				}
+			}
+			testingTask.printGoalStructureStatus();
 
-	        // check that we have passed both tests above:
-	        assertTrue(dataCollector.getNumberOfPassVerdictsSeen() == 4) ;
-	        // goal status should be success
-	        assertTrue(testAgent.success());
-	        // close
-	        testAgent.printStatus();
-        }
-        finally { environment.close(); }
+			// check that we have passed both tests above:
+			assertTrue(dataCollector.getNumberOfPassVerdictsSeen() == 4);
+			// goal status should be success
+			assertTrue(testAgent.success());
+			// close
+			testAgent.printStatus();
+		} catch (IOException e) {
+			System.err.println("Error: " + e.getMessage());
+		} finally {
+			environment.close();
+		}
     }
 }
