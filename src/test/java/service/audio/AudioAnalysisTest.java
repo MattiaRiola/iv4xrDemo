@@ -1,23 +1,38 @@
 package service.audio;
 
 
+import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import utils.FileExplorer;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import java.util.Comparator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class AudioAnalysisTest {
 
-    @BeforeAll
-    public static void init() {
 
+    static List<AudioSignal> readAudios = new LinkedList<>();
+    static final String DIR_BASE_AUDIO_RES = "src/test/resources/audio/";
+    static final String DIR_GAME_SOUNDS = DIR_BASE_AUDIO_RES + "game/sounds/";
+    static final String DIR_SONGS = DIR_BASE_AUDIO_RES + "songs/";
+    static final String DIR_RECORDS = DIR_BASE_AUDIO_RES + "recorded/";
+
+    @BeforeAll
+    public static void init() throws UnsupportedAudioFileException, IOException {
+        List<AudioSignal> gameSounds = FileExplorer.readAllSoundsInFolder(DIR_GAME_SOUNDS);
+        readAudios.addAll(gameSounds);
+        AudioAnalysis.loadAudioFingerprint(gameSounds);
     }
+
 
     @AfterAll
     public static void endingTest() {
@@ -25,66 +40,42 @@ public class AudioAnalysisTest {
     }
 
     @Test
-    public void bigendtolittleend() {
-        byte low = 2;
-        byte high = 1;
-        ByteBuffer bb = ByteBuffer.allocate(2).put(high).put(low)
-                .order(ByteOrder.LITTLE_ENDIAN);
-        int newlow = reverseBitsByte(bb.get(0));
-        int newhigh = reverseBitsByte(bb.get(1));
-        int oldInt = (high << 8) + (low & 0x00ff);
-        int newInt = (newhigh << 8) + (newlow & 0x00ff);
-    }
+    public void simpleFingerPrintTest() throws UnsupportedAudioFileException, IOException {
+        String ding1FileName = "ding1.wav";
+        String ding2FileName = "ding2.wav";
+        String ding1CopyFileName = "ding1Copy.wav";
+        AudioSignal ding1Audio = FileExplorer.readWavFile(DIR_GAME_SOUNDS + ding1FileName, ding1FileName);
+        AudioSignal ding1AudioCopy = FileExplorer.readWavFile(DIR_GAME_SOUNDS + ding1CopyFileName, ding1CopyFileName);
+        AudioSignal ding2Audio = FileExplorer.readWavFile(DIR_GAME_SOUNDS + ding2FileName, ding2FileName);
 
-    public byte reverseBitsByte(byte x) {
-        int intSize = 8;
-        byte y = 0;
-        for (int position = intSize - 1; position > 0; position--) {
-            y += ((x & 1) << position);
-            x >>= 1;
-        }
-        return y;
+        assertEquals(ding1Audio.getFingerprint().keySet(), ding1AudioCopy.getFingerprint().keySet());
+        assertNotEquals(ding1Audio.getFingerprint().keySet(), ding2Audio.getFingerprint().keySet());
+
+        assertNotEquals(0, AudioAnalysis.searchMatch(ding1Audio).size());
+
     }
 
     @Test
-    public void audioAnalysisTest() throws IOException, UnsupportedAudioFileException, InterruptedException {
-
-        AudioSignal ding1Audio = AudioAnalysis.readWavFile("src/test/resources/audio/ding1.wav", "ding1");
-        AudioSignal ding2Audio = AudioAnalysis.readWavFile("src/test/resources/audio/ding2.wav", "ding2");
-//        AudioSignal fireSizzleAudio = AudioAnalysis.readWavFile("src/test/resources/audio/firesizzle.wav");
-//        AudioSignal deathAudio = AudioAnalysis.readWavFile("src/test/resources/audio/death.wav");
-//        AudioSignal monsterAudio = AudioAnalysis.readWavFile("src/test/resources/audio/monsterAttack.wav");
-//        AudioSignal tensionAudio = AudioAnalysis.readWavFile("src/test/resources/audio/tension.wav");
-//        AudioSignal sound50HzAudio = AudioAnalysis.readWavFile("src/test/resources/audio/50HzSound.wav");
-//        AudioSignal sound10000HzAudio = AudioAnalysis.readWavFile("src/test/resources/audio/10000HzSound.wav");
-        //AudioSignal windowlickerCut = AudioAnalysis.readWavFile("src/test/resources/audio/WindowlickerCut.wav","WindowlickerCut");
-        //AudioSignal windowlickerAudio = AudioAnalysis.readWavFile("src/test/resources/audio/Windowlicker.wav","Windowlicker");
-
-        //Plot2D.plotArray(ding1Audio.getSamples()[0], Color.BLUE);
-        //Plot2D.plotArray(ding2Audio.getSamples()[0], Color.RED);
-        //Plot2D.plotArray(windowlickerAudio.getSamples()[0], Color.RED);
-        //PlotSpectrum2D.plotSpectrum(spectrumWindowLilckerByte, "windowlickerByte spectrum");
-        //int[][] windowLickerByteChannels = new int[2][windowlickerByte.length];
-        //windowLickerByteChannels[0] = fromByteToInt(windowlickerByte);
-        //AudioSignal audioWindowLicker = new AudioSignal(windowlickerByte, AudioConfig.getDefaultFormat());
-        //System.out.println("windowlicker: " + windowlicker);
-
-
-        //PlotSpectrum2D.plotSpectrum(windowlickerCut.getSpectrum(), "wav spectrum");
-
-        //Plot2D.plotArray(Arrays.stream(sound50HzAudio[0]).filter(i->i!=0).limit(1000).toArray(), Color.BLUE);       //Plot2D.plotArray(sound50HzAudio[0], Color.BLUE);
-        //Plot2D.plotArray(Arrays.stream(sound10000HzAudio[0]).filter(i->i!=0).limit(1000).toArray(), Color.RED);       //Plot2D.plotArray(sound50HzAudio[0], Color.BLUE);
-
-
-        //Thread.sleep(100000);
-        Assertions.assertNotEquals(ding1Audio.getFingerprint(), ding2Audio.getFingerprint());
-        Assertions.fail("TODO: tests on audio analysis");
+    public void songAnalysisTest() throws IOException, UnsupportedAudioFileException, InterruptedException {
+        List<AudioSignal> songs = FileExplorer.readAllSoundsInFolder(DIR_SONGS);
+        AudioAnalysis.loadAudioFingerprint(songs);
+        readAudios.addAll(songs);
+        String resonanceRecordFileName = "Recorded-HOME-Resonance.wav";
+        AudioSignal resonanceRecordedAudio = FileExplorer.readWavFile(DIR_RECORDS + resonanceRecordFileName, resonanceRecordFileName);
+        Map<String, List<AudioMatch>> matches = AudioAnalysis.searchMatch(resonanceRecordedAudio);
+        assertNotEquals(0, matches.size(), "no matches found");
+        assertEquals(1, matches.keySet().stream().filter(k -> k.toLowerCase().contains("resonance")).count(), "no matches with resonance");
+        String bestMatch = matches.entrySet().stream()
+                .max(Comparator.comparingInt(e -> e.getValue().size()))
+                .get().getKey();
+        System.out.println(matches);
+        assertTrue(bestMatch.toLowerCase().contains("resonance"), "best match is not resonance");
     }
 
-    @Test
-    void graphPlotterTest() throws InterruptedException {
 
-    }
+
+
+
 
 
 }

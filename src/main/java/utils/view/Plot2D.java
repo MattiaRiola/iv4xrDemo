@@ -84,10 +84,10 @@ public class Plot2D extends JPanel{
     }
 
     //main() method start
-    public static void plotArray(int[] data, Color color){
+    public static void plotArray(int[] data, Color color, String title) {
 
         //create an instance of JFrame class
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame(title);
         // set size, layout and location for frame.
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(900, 600);
@@ -95,16 +95,5 @@ public class Plot2D extends JPanel{
         frame.add(new Plot2D(data, color));
         frame.setVisible(true);
     }
-    public static void plot2Array(int[] data1,int[] data2){
 
-        //create an instance of JFrame class
-        JFrame frame = new JFrame();
-        // set size, layout and location for frame.
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(new Plot2D(data2,Color.BLUE));
-        frame.add(new Plot2D(data1,Color.RED));
-        frame.setSize(600, 600);
-        frame.setLocation(200, 200);
-        frame.setVisible(true);
-    }
 }
