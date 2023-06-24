@@ -21,10 +21,11 @@ public class AudioAnalysisTest {
 
 
     static List<AudioSignal> readAudios = new LinkedList<>();
-    static final String DIR_BASE_AUDIO_RES = "src/test/resources/audio/";
-    static final String DIR_GAME_SOUNDS = DIR_BASE_AUDIO_RES + "game/sounds/";
-    static final String DIR_SONGS = DIR_BASE_AUDIO_RES + "songs/";
-    static final String DIR_RECORDS = DIR_BASE_AUDIO_RES + "recorded/";
+    public static final String DIR_BASE_AUDIO_RES = "src/test/resources/audio/";
+    public static final String DIR_GAME_SOUNDS = DIR_BASE_AUDIO_RES + "game/sounds/";
+    public static final String DIR_SONGS = DIR_BASE_AUDIO_RES + "songs/";
+    public static final String DIR_RECORDS = DIR_BASE_AUDIO_RES + "recorded/";
+    public static final String DIR_GAME_RECORDS = DIR_BASE_AUDIO_RES + "game/records/";
 
     @BeforeAll
     public static void init() throws UnsupportedAudioFileException, IOException {
