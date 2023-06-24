@@ -13,11 +13,35 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 import static config.audio.AudioConfig.*;
 
 public class AudioAnalysis {
-    private Complex[][] results;
+    private static final Map<Long, AudioFingerprint> fingerprintsDb = new HashMap<>();
+
+    public static void loadAudioFingerprint(AudioSignal audio) {
+        Map<Long, AudioFingerprint> fingerprints = audio.getFingerprint();
+        fingerprintsDb.putAll(fingerprints);
+
+    }
+
+    public static Map<String, Long> searchMatch(AudioSignal signal) {
+        Map<String, Long> matchesPoints = new HashMap<>();
+        Map<Long, AudioFingerprint> fingerprints = signal.getFingerprint();
+        for (Long hash : fingerprints.keySet()) {
+            if (fingerprintsDb.containsKey(hash)) {
+                AudioFingerprint fingerprint = fingerprintsDb.get(hash);
+                System.out.println("Match found: " + fingerprint);
+                if (matchesPoints.containsKey(fingerprint.name))
+                    matchesPoints.put(fingerprint.name, matchesPoints.get(fingerprint.name) + 1);
+                else
+                    matchesPoints.put(fingerprint.name, 1L);
+            }
+        }
+        return matchesPoints;
+    }
 
     public static AudioSignal readWavFile(String filePath, String name) throws IOException, UnsupportedAudioFileException {
         File file = new File(filePath);
@@ -165,9 +189,9 @@ public class AudioAnalysis {
         return i;
     }
 
-    public static AudioFingerprint analyse(AudioSignal audio) {
+    public static Map<Long, AudioFingerprint> analyse(AudioSignal audio) {
         Complex[][] audioSpectrum = audio.getSpectrum();
-
+        Map<Long, AudioFingerprint> fingerprintsMap = new HashMap<>();
         if (audioSpectrum == null) {
             audioSpectrum = FFT32bit(audio.getSamples()[0]);
             audio.setSpectrum(audioSpectrum);
@@ -186,10 +210,22 @@ public class AudioAnalysis {
                 if (mag > highScores[t][index]) {
                     highScores[t][index] = mag;
                     relatedFrequencies[t][index] = freq;
+
                 }
             }
-
+            AudioFingerprint audioFingerprint = new AudioFingerprint(
+                    highScores[t],
+                    relatedFrequencies[t],
+                    getTimestamp(t, audio.getFormat()),
+                    t,
+                    audio.getName()
+            );
+            fingerprintsMap.put(audioFingerprint.getHash(), audioFingerprint);
         }
-        return new AudioFingerprint(highScores, relatedFrequencies);
+        return fingerprintsMap;
+    }
+
+    public static double getTimestamp(long sampleIndex, AudioFormat format) {
+        return (((double) sampleIndex / format.getSampleRate()) * 1000);
     }
 }

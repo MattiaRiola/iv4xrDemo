@@ -5,13 +5,20 @@ import java.util.Arrays;
 import static config.audio.AudioConfig.FUZ_FACTOR;
 
 public class AudioFingerprint {
+    public final String name;
+    public final double time;
+    public final long index;
+    public final long fingerprint;
+    public final double[] highScores;
+    public final double[] relatedFrequency;
 
-    double[][] highScores;
-    double[][] relatedFrequency;
-
-    public AudioFingerprint(double[][] highScores, double[][] relatedFrequencies) {
+    public AudioFingerprint(double[] highScores, double[] relatedFrequencies, double time, long index, String name) {
         this.highScores = highScores;
         this.relatedFrequency = relatedFrequencies;
+        this.time = time;
+        this.index = index;
+        this.name = name;
+        this.fingerprint = getHash();
     }
 
     @Override
@@ -36,5 +43,22 @@ public class AudioFingerprint {
         return (p4 - (p4 % FUZ_FACTOR)) * 100000000 + (p3 - (p3 % FUZ_FACTOR))
                 * 100000 + (p2 - (p2 % FUZ_FACTOR)) * 100
                 + (p1 - (p1 % FUZ_FACTOR));
+    }
+
+    public Long getHash() {
+        long p1 = (long) relatedFrequency[0];
+        long p2 = (long) relatedFrequency[1];
+        long p3 = (long) relatedFrequency[2];
+        long p4 = (long) relatedFrequency[3];
+        return hash(p1, p2, p3, p4);
+    }
+
+    @Override
+    public String toString() {
+        return "AudioFingerprint{" +
+                "name='" + name + '\'' +
+                ", time=" + time +
+                ", fingerprint=" + fingerprint +
+                '}';
     }
 }

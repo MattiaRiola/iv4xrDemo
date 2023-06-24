@@ -5,6 +5,7 @@ import entity.math.Complex;
 import service.audio.AudioAnalysis;
 
 import javax.sound.sampled.AudioFormat;
+import java.util.Map;
 
 public class AudioSignal {
     private String name;
@@ -12,7 +13,7 @@ public class AudioSignal {
     private Complex[][] spectrum;
     private AudioFormat format;
 
-    private AudioFingerprint fingerprint;
+    private Map<Long, AudioFingerprint> fingerprint;
 
 
     public AudioSignal(String name, int[][] samples, AudioFormat format) {
@@ -27,7 +28,7 @@ public class AudioSignal {
         return name;
     }
 
-    public AudioFingerprint getFingerprint() {
+    public Map<Long, AudioFingerprint> getFingerprint() {
         return fingerprint;
     }
 
