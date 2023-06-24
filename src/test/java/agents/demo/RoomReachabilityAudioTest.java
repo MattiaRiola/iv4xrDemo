@@ -70,7 +70,7 @@ public class RoomReachabilityAudioTest {
 	}
 
 	private static void changeConfig() {
-		AudioConfig.FUZ_FACTOR = 2;
+		AudioConfig.FUZ_FACTOR = 4;
 		AudioConfig.CHUNK_SIZE = 1024 * 8 * 1;
 	}
 

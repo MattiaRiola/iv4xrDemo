@@ -109,6 +109,7 @@ public class LabRecruitsTestServer {
         if (audioRecorder != null){
             try {
                 System.out.println("Closing Python audio recorder ...");
+                audioRecorder.waitFor(15, TimeUnit.SECONDS);
                 audioRecorder.destroy();
                 audioRecorder.waitFor();
                 System.out.println("Python audio recorder closed");

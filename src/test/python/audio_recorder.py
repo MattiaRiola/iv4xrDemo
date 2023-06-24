@@ -21,7 +21,7 @@ chunk = 44100  # Record in chunks of 1024 samples
 sample_format = pyaudio.paInt16  # 16 bits per sample
 channels = 2
 fs = 44100  # Record at 44100 samples per second
-seconds = 5
+seconds = 15
 
 for i in range(NUM_SAMPLES_TO_RECORD):
     filename = f"./src/test/resources/audio/game/records/output_record_{i}.wav"
