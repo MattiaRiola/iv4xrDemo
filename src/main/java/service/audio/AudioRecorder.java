@@ -7,6 +7,8 @@ import java.io.IOException;
 
 import static config.audio.AudioConfig.getDefaultFormat;
 
+@Deprecated()
+//In order to use this class adjust settings to record the correct audio channel
 public class AudioRecorder {
 
     private final AudioFormat format;

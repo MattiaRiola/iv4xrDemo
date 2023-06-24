@@ -59,6 +59,7 @@ public class AudioSignal {
     @Override
     public String toString() {
         return "AudioSignal{" +
+                "name='" + name + '\'' +
                 ", format=" + format +
                 '}';
     }

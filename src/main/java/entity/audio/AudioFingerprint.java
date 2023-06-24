@@ -58,7 +58,6 @@ public class AudioFingerprint {
         return "AudioFingerprint{" +
                 "name='" + name + '\'' +
                 ", time=" + time +
-                ", fingerprint=" + fingerprint +
                 '}';
     }
 }

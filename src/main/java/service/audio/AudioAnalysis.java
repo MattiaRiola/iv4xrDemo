@@ -1,33 +1,37 @@
 package service.audio;
 
 import entity.audio.AudioFingerprint;
+import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import entity.math.Complex;
 import utils.math.FFT;
 
 import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.UnsupportedAudioFileException;
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static config.audio.AudioConfig.*;
 
 public class AudioAnalysis {
     private static final Map<Long, AudioFingerprint> fingerprintsDb = new HashMap<>();
 
-    public static void loadAudioFingerprint(AudioSignal audio) {
-        Map<Long, AudioFingerprint> fingerprints = audio.getFingerprint();
-        fingerprintsDb.putAll(fingerprints);
+    public static void loadAudioFingerprint(List<AudioSignal> audios) {
+
+        for (AudioSignal audio : audios) {
+            Map<Long, AudioFingerprint> fingerprints = audio.getFingerprint();
+            fingerprintsDb.putAll(fingerprints);
+        }
 
     }
 
-    public static Map<String, Long> searchMatch(AudioSignal signal) {
+    public static Map<String, Long> oldsearchMatch(AudioSignal signal) {
         Map<String, Long> matchesPoints = new HashMap<>();
         Map<Long, AudioFingerprint> fingerprints = signal.getFingerprint();
         for (Long hash : fingerprints.keySet()) {
@@ -43,66 +47,25 @@ public class AudioAnalysis {
         return matchesPoints;
     }
 
-    public static AudioSignal readWavFile(String filePath, String name) throws IOException, UnsupportedAudioFileException {
-        File file = new File(filePath);
-        AudioInputStream ais = AudioSystem.getAudioInputStream(file);
-        AudioFormat audioFormat = ais.getFormat();
-        int frameLength = (int) ais.getFrameLength();
-        int frameSize = (int) audioFormat.getFrameSize();
-        byte[] eightBitByteArray = new byte[frameLength * frameSize];
-        if (audioFormat.getSampleSizeInBits() != 16 || audioFormat.getSampleRate() != 44100)
-            throw new UnsupportedAudioFileException("Audio " + file + " file must be 16bit and 44100Hz" + " but it is " + audioFormat);
+    public static Map<String, List<AudioMatch>> searchMatch(AudioSignal signal) {
 
+        Map<String, List<AudioMatch>> matchesPoints = new HashMap<>();
+        Map<Long, AudioFingerprint> fingerprints = signal.getFingerprint();
+        for (Map.Entry<Long, AudioFingerprint> recordFingerprint : fingerprints.entrySet()) {
+            if (fingerprintsDb.containsKey(recordFingerprint.getKey())) {
+                AudioFingerprint dbFingerprint = fingerprintsDb.get(recordFingerprint.getKey());
+                System.out.println("Match found: " + dbFingerprint);
 
-        int result = ais.read(eightBitByteArray);
-
-        int channels = ais.getFormat().getChannels();
-        int[][] samples = new int[Math.max(channels, 2)][frameLength];
-
-        int sampleIndex = 0;
-        try {
-
-            for (int t = 0; t < eightBitByteArray.length; ) {
-                for (int channel = 0; channel < channels; channel++) {
-                    if (ais.getFormat().isBigEndian()) {
-                        int low = eightBitByteArray[t];
-                        t++;
-                        int high = eightBitByteArray[t];
-                        t++;
-                        int sample = getSixteenBitSample(high, low);
-                        samples[channel][sampleIndex] = sample;
-                    } else {
-                        int low = eightBitByteArray[t];
-                        //byte low =  reverseBitsByte(eightBitByteArray[t]);
-
-                        t++;
-                        int high = eightBitByteArray[t];
-                        //byte high = reverseBitsByte(eightBitByteArray[t]);
-                        t++;
-
-                        int sample = getSixteenBitSample(high, low);
-                        samples[channel][sampleIndex] = sample;
-                    }
-
-                }
-                sampleIndex++;
+                List<AudioMatch> matches = matchesPoints.getOrDefault(dbFingerprint.name, new ArrayList<>());
+                //add matches
+                matches.add(new AudioMatch(dbFingerprint.name, recordFingerprint.getValue().time, dbFingerprint.time));
+                List<AudioMatch> orderedMatches = matches.stream().sorted(Comparator.comparing(AudioMatch::getRecordTime)).collect(Collectors.toList());
+                matchesPoints.put(dbFingerprint.name, orderedMatches);
             }
-            if (audioFormat.getChannels() == 1)
-                samples[1] = samples[0].clone();
-
-
-        } catch (Exception exp) {
-
-            exp.printStackTrace();
-
         }
-        return new AudioSignal(name, samples, ais.getFormat());
-
+        return matchesPoints;
     }
 
-    protected static int getSixteenBitSample(int high, int low) {
-        return (high << 8) + (low & 0x00ff);
-    }
 
     public static byte reverseBitsByte(byte x) {
         int intSize = 8;
