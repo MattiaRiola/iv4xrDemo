@@ -11,12 +11,14 @@ import environments.LabRecruitsEnvironment;
 import helperclasses.Util;
 import logger.PrintColor;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class LabRecruitsTestServer {
 
     private Process server;
+    private Process audioRecorder;
 
     // cannot be called outside this class
     public LabRecruitsTestServer(Boolean useGraphics) {
@@ -25,6 +27,31 @@ public class LabRecruitsTestServer {
 
     public LabRecruitsTestServer(Boolean useGraphics, String redirectPath) {
         start(useGraphics, redirectPath);
+    }
+
+    public LabRecruitsTestServer(boolean useGraphics, Integer chunkLenght, String redirectPath) {
+        start(useGraphics, redirectPath);
+        String userDir = System.getProperty("user.dir") ;
+        String pythonScriptPath = Paths.get(userDir, "src/test/python/audio_recorder.py").toAbsolutePath().toString();
+        Util.verifyPath(pythonScriptPath);
+
+        if (audioRecorder != null && audioRecorder.isAlive())
+            throw new IllegalCallerException("The current server is still running. Close the server first by calling Close();");
+
+        try {
+            System.out.println("Starting python audio recorder... ");
+            ProcessBuilder pb = new ProcessBuilder("python", pythonScriptPath);
+
+            pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+
+            audioRecorder = pb.start();
+            waitFor(Process::isAlive);
+            System.out.println("Python audio recorder started");
+
+        } catch (IOException e) {
+            System.out.println(PrintColor.FAILURE() + ": Cannot start LabRecruits server!\n" + e.getMessage());
+        }
     }
 
     private void start(Boolean useGraphics, String binaryPath) {
@@ -73,6 +100,19 @@ public class LabRecruitsTestServer {
                 //server.waitFor();
                 server.destroy();
                 server.waitFor();
+                closeAudioRecorder();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    public void closeAudioRecorder(){
+        if (audioRecorder != null){
+            try {
+                System.out.println("Closing Python audio recorder ...");
+                audioRecorder.destroy();
+                audioRecorder.waitFor();
+                System.out.println("Python audio recorder closed");
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
