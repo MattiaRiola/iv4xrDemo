@@ -74,11 +74,11 @@ def argReader(argv):
     return recordSize, numRecords
 
 
-recordSize, numRecords = 15, 1
-if __name__ == "__main__":
-    recordSize, numRecords = argReader(sys.argv[1:])
+recordSize, numRecords = 25, 1
+# if __name__ == "__main__":
+#    recordSize, numRecords = argReader(sys.argv[1:])
 
-argReader(sys.argv)
+# argReader(sys.argv)
 
 input_device_index = None
 for i in range(p.get_device_count()):
