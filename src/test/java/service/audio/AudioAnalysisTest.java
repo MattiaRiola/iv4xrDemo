@@ -26,7 +26,7 @@ public class AudioAnalysisTest {
     public static final String DIR_SONGS = DIR_BASE_AUDIO_RES + "songs/";
     public static final String DIR_RECORDS = DIR_BASE_AUDIO_RES + "recorded/";
     public static final String DIR_GAME_RECORDS = DIR_BASE_AUDIO_RES + "game/records/";
-    public static final boolean DELETE_AUDIO_ONCE_FINISHED = false;
+    public static final boolean DELETE_AUDIO_ONCE_FINISHED = true;
 
 
     @BeforeAll

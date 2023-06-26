@@ -48,7 +48,7 @@ public class RoomReachabilityAudioTest {
 	static List<AudioSignal> readAudios = new LinkedList<>();
 	private static LabRecruitsTestServer labRecruitsTestServer;
 
-	private static final boolean SKIP_GAMEPLAY = true;
+	private static final boolean SKIP_GAMEPLAY = false;
 
 	@BeforeAll
 	static void start() throws InterruptedException, UnsupportedAudioFileException, IOException {
