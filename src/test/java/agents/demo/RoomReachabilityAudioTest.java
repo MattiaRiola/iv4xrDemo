@@ -11,6 +11,7 @@ package agents.demo;
 import agents.LabRecruitsTestAgent;
 import agents.TestSettings;
 import agents.tactics.GoalLib;
+import config.audio.ChunkSize;
 import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import environments.LabRecruitsConfig;
@@ -53,8 +54,7 @@ public class RoomReachabilityAudioTest {
 	@BeforeAll
 	static void start() throws InterruptedException, UnsupportedAudioFileException, IOException {
 		Assumptions.assumeTrue(USE_AUDIO_TESTING, "audio testing disabled");
-
-		AudioAnalysis.changeConfig(3, 1024 * 4 * 1);
+		AudioAnalysis.changeConfigBySeconds(3, ChunkSize.SMALL);
 
 		List<AudioSignal> gameSounds = FileExplorer.readAllSoundsInFolder(DIR_GAME_SOUNDS);
 		readAudios.addAll(gameSounds);
@@ -90,16 +90,24 @@ public class RoomReachabilityAudioTest {
 		var doorToTest = "door1";
 		LabRecruitsEnvironment environment = null;
 		try {
+			//when
 			if (!SKIP_GAMEPLAY) {// Create an environment
 				environment = createLevelEnvironment();
 				playLevel(environment);
 				labRecruitsTestServer.closeAudioRecorder();
 			}
-			testAudio();
 
-		} catch (IOException e) {
-			System.err.println("Error: " + e.getMessage());
-		} catch (UnsupportedAudioFileException e) {
+			Map<String, List<AudioMatch>> matches = getMatchesFromGameRecords();
+
+			//then
+			List<String> soundsFound = new LinkedList<>(matches.keySet());
+			System.out.println("Matches:");
+			AudioAnalysis.printMatches(matches);
+			Assertions.assertFalse(soundsFound.isEmpty(), "No matches found in the game records");
+			Assertions.assertTrue(soundsFound.contains("ding1.wav"), "ding1.wav not found in the game records, found: " + soundsFound);
+			Assertions.assertTrue(soundsFound.contains("ding1.wav"), "firesizzle.wav not found in the game records, found: " + soundsFound);
+
+		} catch (IOException | UnsupportedAudioFileException e) {
 			System.err.println("Error: " + e.getMessage());
 		} finally {
 			if (!SKIP_GAMEPLAY)
@@ -186,19 +194,16 @@ public class RoomReachabilityAudioTest {
 		testAgent.printStatus();
 	}
 
-	private static void testAudio() throws IOException, UnsupportedAudioFileException {
+	private static Map<String, List<AudioMatch>> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
+
 		List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
+		Assertions.assertEquals(1, gameRecords.size(), "too many records in the folder, only one record is analysed");
+		AudioSignal gameRecord = gameRecords.get(0);
 
-		List<String> soundsFound = new LinkedList<>();
-		for (AudioSignal gameRecord : gameRecords) {
-			System.out.println("gameRecord: " + gameRecord.getName());
-			Map<String, List<AudioMatch>> matches = AudioAnalysis.searchMatch(gameRecord);
-			soundsFound.addAll(matches.keySet());
-		}
-		Assertions.assertFalse(soundsFound.isEmpty(), "No sound found in the game records");
-		Assertions.assertTrue(soundsFound.contains("ding1.wav"), "ding1.wav not found in the game records, found: " + soundsFound);
-		Assertions.assertTrue(soundsFound.contains("ding1.wav"), "firesizzle.wav not found in the game records, found: " + soundsFound);
-		Assertions.assertNotEquals(soundsFound.size(), gameRecords.size());
+		System.out.println("Analysing: " + gameRecord.getName());
+		var matches = AudioAnalysis.searchMatch(gameRecord);
+		Assertions.assertNotEquals(matches.keySet().size(), gameRecords.size());
 
+		return matches;
 	}
 }

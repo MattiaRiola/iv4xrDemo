@@ -1,6 +1,7 @@
 package entity.audio;
 
 
+import config.audio.AudioConfig;
 import entity.math.Complex;
 import service.audio.AudioAnalysis;
 
@@ -22,6 +23,13 @@ public class AudioSignal {
         this.format = format;
         this.spectrum = AudioAnalysis.FFT32bit(samples[0]);
         this.fingerprint = AudioAnalysis.analyse(this);
+        System.out.println(
+                name + " loaded with:\n\t" + samples.length + " samples" +
+                        "\n\tgenerating " + fingerprint.size() + " fingerprints" +
+                        "\n\tusing a " + spectrum.length + " chunks long spectrum" +
+                        "\n\twith fuz factor of: " + AudioConfig.FUZ_FACTOR +
+                        "\n\tminimum chunk duration: " + AudioConfig.getChunkDuration(this.format, this.samples.length) + " seconds"
+        );
     }
 
     public String getName() {

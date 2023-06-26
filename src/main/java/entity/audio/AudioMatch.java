@@ -24,4 +24,11 @@ public class AudioMatch {
     public String getName() {
         return name;
     }
+
+    @Override
+    public String toString() {
+        return " At " + String.format(" (%.3f)", recordTime) + ": " +
+                name + String.format(" (%.3f)", dbTime);
+    }
+
 }

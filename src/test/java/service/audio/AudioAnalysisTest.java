@@ -26,7 +26,7 @@ public class AudioAnalysisTest {
     public static final String DIR_SONGS = DIR_BASE_AUDIO_RES + "songs/";
     public static final String DIR_RECORDS = DIR_BASE_AUDIO_RES + "recorded/";
     public static final String DIR_GAME_RECORDS = DIR_BASE_AUDIO_RES + "game/records/";
-    public static final boolean DELETE_AUDIO_ONCE_FINISHED = true;
+    public static final boolean DELETE_AUDIO_ONCE_FINISHED = false;
 
 
     @BeforeAll
@@ -53,8 +53,8 @@ public class AudioAnalysisTest {
 
         assertEquals(ding1Audio.getFingerprint().keySet(), ding1AudioCopy.getFingerprint().keySet());
         assertNotEquals(ding1Audio.getFingerprint().keySet(), ding2Audio.getFingerprint().keySet());
-
-        assertNotEquals(0, AudioAnalysis.searchMatch(ding1Audio).size());
+        var matches = AudioAnalysis.searchMatch(ding1Audio);
+        assertNotEquals(0, matches.size(), "no matches found");
 
     }
 
