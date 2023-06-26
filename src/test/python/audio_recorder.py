@@ -5,19 +5,24 @@ import wave
 
 
 def argReader(argv):
-    recordSize = ''
-    numRecords = ''
+    print("Python argv: ", argv)
+    recordSize = 15
+    numRecords = 1
     opts, args = getopt.getopt(argv, "hi:o:", ["recordSize=", "numRecords="])
-    for opt, arg in opts:
-        if opt == '-h':
-            print('test.py -s <recordSize> (in seconds) -n <numRecords>')
-            sys.exit()
-        elif opt in ("-s", "--recordSize"):
-            recordSize = arg
-        elif opt in ("-n", "--numRecords"):
-            numRecords = arg
-    print('Record size is ', recordSize)
-    print('num of records is ', numRecords)
+    try:
+
+        for opt, arg in opts:
+            if opt == '-h':
+                print('test.py -s <recordSize> (in seconds) -n <numRecords>')
+                sys.exit()
+            elif opt in ("-s", "--recordSize"):
+                recordSize = float(arg)
+            elif opt in ("-n", "--numRecords"):
+                numRecords = int(arg)
+        print('Record size is ', recordSize)
+        print('num of records is ', numRecords)
+    except ValueError:
+        print("The 'seconds' variable does not contain a valid number.")
     return recordSize, numRecords
 
 
@@ -49,7 +54,7 @@ def record(seconds, numRecords):
 
         p = pyaudio.PyAudio()  # Create an interface to PortAudio
 
-        print('Recording')
+        print('Recording ', numRecords, ' long ', seconds, ' seconds')
 
         stream = p.open(format=sample_format,
                         channels=channels,
@@ -59,7 +64,9 @@ def record(seconds, numRecords):
                         input_device_index=input_device_index)
 
         frames = []  # Initialize array to store frames
-
+        print(type(fs))  # should print <class 'int'> or <class 'float'>
+        print(type(chunk))  # should print <class 'int'> or <class 'float'>
+        print(type(seconds))  # should print <class 'int'> or <class 'float'>
         # Store data in chunks for 3 seconds
         for i in range(0, int(fs / chunk * seconds)):
             data = stream.read(chunk)

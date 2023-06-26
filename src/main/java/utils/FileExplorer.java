@@ -29,6 +29,23 @@ public class FileExplorer {
         }
     }
 
+    public static void deleteFilesInFolder(String dir) throws IOException {
+        try (Stream<Path> stream = Files.list(Paths.get(dir))) {
+            int i = 0;
+            stream
+                    .filter(file -> !Files.isDirectory(file))
+                    .forEach(p -> {
+                        try {
+                            Files.delete(p);
+                            System.out.println("Deleted " + p);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+
+        }
+    }
+
     public static List<AudioSignal> readAllSoundsInFolder(String dir) throws IOException, UnsupportedAudioFileException {
         Set<String> soundFileNames = FileExplorer.listFilesUsingFilesList(dir);
         List<AudioSignal> res = new LinkedList<>();

@@ -11,7 +11,6 @@ package agents.demo;
 import agents.LabRecruitsTestAgent;
 import agents.TestSettings;
 import agents.tactics.GoalLib;
-import config.audio.AudioConfig;
 import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import environments.LabRecruitsConfig;
@@ -37,8 +36,7 @@ import static agents.TestSettings.USE_INSTRUMENT;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static service.audio.AudioAnalysisTest.DIR_GAME_RECORDS;
-import static service.audio.AudioAnalysisTest.DIR_GAME_SOUNDS;
+import static service.audio.AudioAnalysisTest.*;
 
 /**
  * A simple test to demonstrate using iv4xr agents to test the Lab Recruits game.
@@ -56,7 +54,7 @@ public class RoomReachabilityAudioTest {
 	static void start() throws InterruptedException, UnsupportedAudioFileException, IOException {
 		Assumptions.assumeTrue(USE_AUDIO_TESTING, "audio testing disabled");
 
-		changeConfig();
+		AudioAnalysis.changeConfig(3, 1024 * 4 * 1);
 
 		List<AudioSignal> gameSounds = FileExplorer.readAllSoundsInFolder(DIR_GAME_SOUNDS);
 		readAudios.addAll(gameSounds);
@@ -69,14 +67,13 @@ public class RoomReachabilityAudioTest {
 
 	}
 
-	private static void changeConfig() {
-		AudioConfig.FUZ_FACTOR = 4;
-		AudioConfig.CHUNK_SIZE = 1024 * 8 * 1;
-	}
 
 	@AfterAll
-	static void close() {
+	static void close() throws IOException {
 		if (labRecruitsTestServer != null) labRecruitsTestServer.close();
+
+		if (USE_AUDIO_TESTING && DELETE_AUDIO_ONCE_FINISHED)
+			FileExplorer.deleteFilesInFolder(DIR_GAME_RECORDS);
 	}
 
 	void instrument(Environment env) {
@@ -96,8 +93,10 @@ public class RoomReachabilityAudioTest {
 			if (!SKIP_GAMEPLAY) {// Create an environment
 				environment = createLevelEnvironment();
 				playLevel(environment);
+				labRecruitsTestServer.closeAudioRecorder();
 			}
 			testAudio();
+
 		} catch (IOException e) {
 			System.err.println("Error: " + e.getMessage());
 		} catch (UnsupportedAudioFileException e) {
@@ -119,7 +118,7 @@ public class RoomReachabilityAudioTest {
 
 	private static void playLevel(LabRecruitsEnvironment environment) throws IOException, InterruptedException {
 		TestSettings.youCanRepositionWindow();
-		labRecruitsTestServer.startRecording();
+		labRecruitsTestServer.startRecording(5, 4);
 
 		// create a test agent
 		var testAgent = new LabRecruitsTestAgent("agent1") // matches the ID in the CSV file
@@ -199,5 +198,7 @@ public class RoomReachabilityAudioTest {
 		Assertions.assertFalse(soundsFound.isEmpty(), "No sound found in the game records");
 		Assertions.assertTrue(soundsFound.contains("ding1.wav"), "ding1.wav not found in the game records, found: " + soundsFound);
 		Assertions.assertTrue(soundsFound.contains("ding1.wav"), "firesizzle.wav not found in the game records, found: " + soundsFound);
+		Assertions.assertNotEquals(soundsFound.size(), gameRecords.size());
+
 	}
 }
