@@ -1,5 +1,6 @@
 package service.audio;
 
+import config.audio.AudioConfig;
 import entity.audio.AudioFingerprint;
 import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
@@ -190,5 +191,10 @@ public class AudioAnalysis {
 
     public static double getTimestamp(long sampleIndex, AudioFormat format) {
         return (((double) sampleIndex / format.getSampleRate()) * 1000);
+    }
+
+    public static void changeConfig(Integer fuzFactor, Integer chunkSize) {
+        AudioConfig.FUZ_FACTOR = fuzFactor;
+        AudioConfig.CHUNK_SIZE = chunkSize;
     }
 }

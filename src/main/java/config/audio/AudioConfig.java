@@ -12,7 +12,7 @@ public class AudioConfig {
      * with 16-bit samples, at 44,100 Hz, one second of such sound will be 44,100 samples * 2 bytes * 2 channels ≈ 176 kB.
      * If we pick 4 kB for the size of a chunk, we will have 44 chunks of data to analyze in every second of the song.
      */
-    public static int CHUNK_SIZE = 1024 * 8 * 4; //2KB (0.5seconds)
+    public static int CHUNK_SIZE = 1024 * 8 * 4; //4KB (1 seconds)
 
     public static AudioFormat getDefaultFormat() {
         float sampleRate = UPPER_LIMIT;

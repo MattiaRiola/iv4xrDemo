@@ -40,12 +40,19 @@ public class LabRecruitsTestServer {
 
     }
 
-    public void startRecording() throws IOException {
+    /**
+     * Start a python script that start to record master audio
+     *
+     * @param numOfRecords number of files
+     * @param recordSize   each file is long recordSize seconds
+     * @throws IOException
+     */
+    public void startRecording(Integer numOfRecords, Integer recordSize) throws IOException {
         if (audioRecorder != null && audioRecorder.isAlive())
             throw new IllegalCallerException("The current server is still running. Close the server first by calling Close();");
 
         System.out.println("Starting python audio recorder... ");
-        ProcessBuilder pb = new ProcessBuilder("python", pythonScriptPath);
+        ProcessBuilder pb = new ProcessBuilder("python", pythonScriptPath, " -s ", recordSize.toString(), " -n ", numOfRecords.toString());
         pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         audioRecorder = pb.start();
