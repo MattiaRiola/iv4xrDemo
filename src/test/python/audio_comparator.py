@@ -17,13 +17,16 @@ orig_to_09.plot_spectrum_group(frange=(20,1000),
     )
 
 orig_to_09.plot_spectrum_heatmap(
-    frange=(20,1000),
+    frange=(20, 1000),
     plot_spec1=False,
     title="Original vs 2009 remaster"
 )
 
 orig_to_09.plot_spectrum_heatmap(
-    frange=(20,500),
+    frange=(20, 500),
     plot_spec1=False,
     title="Original vs 2009 remaster"
 )
+
+equal = SpectrumCompare(remaster15, remaster15)
+equal2 = SpectrumCompare(original, remaster15)
