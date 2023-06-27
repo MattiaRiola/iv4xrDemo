@@ -4,28 +4,28 @@ import java.util.Arrays;
 
 import static config.audio.AudioConfig.FUZ_FACTOR;
 
-public class AudioFingerprint {
+public class ChunkDetail {
     public final String name;
     public final double time;
     public final long index;
-    public final long fingerprint;
+    public final long chunkHash;
     public final double[] highScores;
     public final double[] relatedFrequency;
 
-    public AudioFingerprint(double[] highScores, double[] relatedFrequencies, double time, long index, String name) {
+    public ChunkDetail(double[] highScores, double[] relatedFrequencies, double time, long index, String name) {
         this.highScores = highScores;
         this.relatedFrequency = relatedFrequencies;
         this.time = time;
         this.index = index;
         this.name = name;
-        this.fingerprint = getHash();
+        this.chunkHash = getHash();
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AudioFingerprint that = (AudioFingerprint) o;
+        ChunkDetail that = (ChunkDetail) o;
         return Arrays.equals(highScores, that.highScores) && Arrays.equals(relatedFrequency, that.relatedFrequency);
     }
 

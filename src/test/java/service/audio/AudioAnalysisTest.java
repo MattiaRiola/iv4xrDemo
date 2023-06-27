@@ -43,7 +43,7 @@ public class AudioAnalysisTest {
     }
 
     @Test
-    public void simpleFingerPrintTest() throws UnsupportedAudioFileException, IOException {
+    public void sameSoundFingerPrintTest() throws UnsupportedAudioFileException, IOException {
         String ding1FileName = "ding1.wav";
         String ding2FileName = "ding2.wav";
         String ding1CopyFileName = "ding1Copy.wav";

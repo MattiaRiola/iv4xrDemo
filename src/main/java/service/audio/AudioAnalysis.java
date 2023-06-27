@@ -2,9 +2,9 @@ package service.audio;
 
 import config.audio.AudioConfig;
 import config.audio.ChunkSize;
-import entity.audio.AudioFingerprint;
 import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
+import entity.audio.ChunkDetail;
 import entity.math.Complex;
 import utils.math.FFT;
 
@@ -22,13 +22,21 @@ import java.util.stream.Collectors;
 import static config.audio.AudioConfig.*;
 
 public class AudioAnalysis {
-    private static final Map<Long, AudioFingerprint> fingerprintsDb = new HashMap<>();
+    private static final Map<Long, List<ChunkDetail>> fingerprintsDb = new HashMap<>();
 
     public static void loadAudioFingerprint(List<AudioSignal> audios) {
 
         for (AudioSignal audio : audios) {
-            Map<Long, AudioFingerprint> fingerprints = audio.getFingerprint();
-            fingerprintsDb.putAll(fingerprints);
+            Map<Long, List<ChunkDetail>> fingerprintMap = audio.getFingerprint();
+            fingerprintMap.forEach((k, chunkDetails) ->
+            {
+                for (ChunkDetail chunkDetail : chunkDetails) {
+                    List<ChunkDetail> fingerprintsList = fingerprintsDb
+                            .getOrDefault(chunkDetail.chunkHash, new ArrayList<>());
+                    fingerprintsList.add(chunkDetail);
+                    fingerprintsDb.put(chunkDetail.chunkHash, fingerprintsList);
+                }
+            });
         }
 
     }
@@ -37,19 +45,27 @@ public class AudioAnalysis {
     public static Map<String, List<AudioMatch>> searchMatch(AudioSignal input) {
         System.out.println("Searching match for: " + input.getName());
         Map<String, List<AudioMatch>> matchesPoints = new HashMap<>();
-        Map<Long, AudioFingerprint> inputFingerprints = input.getFingerprint();
-        for (Map.Entry<Long, AudioFingerprint> recordFingerprint : inputFingerprints.entrySet()) {
-            if (fingerprintsDb.containsKey(recordFingerprint.getKey())) {
-                AudioFingerprint dbFingerprint = fingerprintsDb.get(recordFingerprint.getKey());
-                List<AudioMatch> matches = matchesPoints.getOrDefault(dbFingerprint.name, new ArrayList<>());
-                //add matches
-                AudioMatch match = new AudioMatch(dbFingerprint.name, recordFingerprint.getValue().time, dbFingerprint.time);
-                matches.add(match);
-                //System.out.println("Match: "+match);
-                List<AudioMatch> orderedMatches = matches.stream().sorted(Comparator.comparing(AudioMatch::getRecordTime)).collect(Collectors.toList());
-                matchesPoints.put(dbFingerprint.name, orderedMatches);
+        Map<Long, List<ChunkDetail>> inputFingerprintMap = input.getFingerprint();
+        for (Map.Entry<Long, List<ChunkDetail>> inputFingerprintsEntry : inputFingerprintMap.entrySet()) {
+            if (fingerprintsDb.containsKey(inputFingerprintsEntry.getKey())) {
+                List<ChunkDetail> dbFingerprints = fingerprintsDb.get(inputFingerprintsEntry.getKey());
+                for (ChunkDetail dbFingerprint : dbFingerprints) {
+                    for (ChunkDetail inputFingerprint : inputFingerprintsEntry.getValue()) {
+                        List<AudioMatch> matches = matchesPoints.getOrDefault(dbFingerprint.name, new ArrayList<>());
+                        //add matches
+                        AudioMatch match = new AudioMatch(dbFingerprint.name, inputFingerprint.time, dbFingerprint.time);
+                        matches.add(match);
+                        //System.out.println("Match: "+match);
+                        List<AudioMatch> orderedMatches = matches.stream()
+                                .sorted(Comparator.comparing(AudioMatch::getRecordTime))
+                                .collect(Collectors.toList());
+                        matchesPoints.put(dbFingerprint.name, orderedMatches);
+                    }
+
+                }
             }
         }
+        printMatches(matchesPoints);
         return matchesPoints;
     }
 
@@ -139,9 +155,9 @@ public class AudioAnalysis {
         return i;
     }
 
-    public static Map<Long, AudioFingerprint> analyse(AudioSignal audio) {
+    public static Map<Long, List<ChunkDetail>> analyse(AudioSignal audio) {
         Complex[][] audioSpectrum = audio.getSpectrum();
-        Map<Long, AudioFingerprint> fingerprintsMap = new HashMap<>();
+        Map<Long, List<ChunkDetail>> fingerprintsMap = new HashMap<>();
         if (audioSpectrum == null) {
             audioSpectrum = FFT32bit(audio.getSamples()[0]);
             audio.setSpectrum(audioSpectrum);
@@ -163,14 +179,17 @@ public class AudioAnalysis {
 
                 }
             }
-            AudioFingerprint audioFingerprint = new AudioFingerprint(
+
+            ChunkDetail chunkDetail = new ChunkDetail(
                     highScores[t],
                     relatedFrequencies[t],
                     getTimestamp(t, audio.getFormat()),
                     t,
                     audio.getName()
             );
-            fingerprintsMap.put(audioFingerprint.getHash(), audioFingerprint);
+            List<ChunkDetail> fingerprints = fingerprintsMap.getOrDefault(chunkDetail.getHash(), new LinkedList<>());
+            fingerprints.add(chunkDetail);
+            fingerprintsMap.put(chunkDetail.getHash(), fingerprints);
         }
         return fingerprintsMap;
     }
