@@ -1,10 +1,5 @@
 package agents;
 
-import static agents.TestSettings.USE_GRAPHICS;
-import static agents.TestSettings.USE_SERVER_FOR_TEST;
-
-import java.util.Scanner;
-
 import game.LabRecruitsTestServer;
 import game.Platform;
 
@@ -35,26 +30,28 @@ public class TestSettings {
     public static boolean USE_SERVER_FOR_TEST = true ;
 
     /**
-     * If set to true, and USE_SERVER_FOR_TEST is also true, then invoking
-     * start_LabRecruitsTestServer() will launch a fresh instance of the Lab Recruits
-     * game with graphics on/visible. Else the graphics is off (preferred if faster
-     * tests are desired, for example).
-     *
-     * The default is false.
-     */
-    public static boolean USE_GRAPHICS = true ;
+	 * If set to true, and USE_SERVER_FOR_TEST is also true, then invoking
+	 * start_LabRecruitsTestServer() will launch a fresh instance of the Lab Recruits
+	 * game with graphics on/visible. Else the graphics is off (preferred if faster
+	 * tests are desired, for example).
+	 *
+	 * The default is false.
+	 */
+	public static boolean USE_GRAPHICS = true;
 
-    public static boolean USE_INSTRUMENT = false;
+	public static boolean USE_INSTRUMENT = false;
+
+	public static boolean ENABLE_VERBOSE_LOGGING = false;
 	/**
 	 * If true, audio of pc (Mixer Audio) is recorded and analysed
 	 * please be sure that you selected the right output audio and be sure that nothing else is playing during the test
 	 */
 	public static boolean USE_AUDIO_TESTING = true;
 
-    /**
-     * If USE_SERVER_FOR_TEST is set to true, this will launch a fresh instance of the
-     * Lab Recruits game.
-     *
+	/**
+	 * If USE_SERVER_FOR_TEST is set to true, this will launch a fresh instance of the
+	 * Lab Recruits game.
+	 *
      * @param labRecruitesExeRootDir
      * @return
      */

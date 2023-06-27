@@ -7,22 +7,28 @@ at Utrecht University within the Software and Game project course.
 
 package agents.tactics;
 
-import static nl.uu.cs.aplib.AplibEDSL.*;
-import nl.uu.cs.aplib.mainConcepts.Action;
-import nl.uu.cs.aplib.mainConcepts.Tactic;
-import nl.uu.cs.aplib.multiAgentSupport.Acknowledgement;
-import nl.uu.cs.aplib.multiAgentSupport.Message;
-import nl.uu.cs.aplib.agents.MiniMemory;
-import nl.uu.cs.aplib.utils.Pair;
 import eu.iv4xr.framework.mainConcepts.WorldEntity;
 import eu.iv4xr.framework.spatial.Matrix;
 import eu.iv4xr.framework.spatial.Vec3;
 import eu.iv4xr.framework.spatial.meshes.Face;
+import nl.uu.cs.aplib.agents.MiniMemory;
+import nl.uu.cs.aplib.mainConcepts.Action;
+import nl.uu.cs.aplib.mainConcepts.Tactic;
+import nl.uu.cs.aplib.multiAgentSupport.Acknowledgement;
+import nl.uu.cs.aplib.multiAgentSupport.Message;
+import nl.uu.cs.aplib.utils.Pair;
+import world.BeliefState;
+import world.LabEntity;
+import world.LabWorldModel;
 
-import world.*;
-
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 import java.util.stream.Collectors;
+
+import static agents.TestSettings.ENABLE_VERBOSE_LOGGING;
+import static nl.uu.cs.aplib.AplibEDSL.FIRSTof;
+import static nl.uu.cs.aplib.AplibEDSL.action;
 
 /**
  * This class provide a set of standard tactics to interact with the Lab
@@ -555,14 +561,15 @@ public class TacticLib {
     public static Tactic forceReplanPath() {
         Tactic clearTargetPosition = action("Force path recalculation.")
                 .do1((BeliefState belief) -> {
-                	System.out.println("####Detecting some path-planning relevant state change. Forcing path recalculation @" + belief.worldmodel.position) ;
-                	belief.clearGoalLocation();
-                	try {
-                		Thread.sleep(700); // waiting for the door animation
-                	}
-                	catch(Exception e) { }
-                	return belief ;
-                })
+					if (ENABLE_VERBOSE_LOGGING)
+						System.out.println("####Detecting some path-planning relevant state change. Forcing path recalculation @" + belief.worldmodel.position);
+					belief.clearGoalLocation();
+					try {
+						Thread.sleep(700); // waiting for the door animation
+					} catch (Exception e) {
+					}
+					return belief;
+				})
                 .on_((BeliefState belief) -> {
                 	// be careful with the threshold value (the "10" below);
                 	// if this is set too low, the agent may unnecessarily do re-plan
@@ -646,27 +653,30 @@ public class TacticLib {
     public static Tactic tryToUnstuck() {
     	Tactic unstuck = action("Trying to unstuck")
     			.do1((BeliefState belief) -> {
-    				System.out.println("#### STUCK, probably cannot get past a turn-corner: @"
-    			           + belief.worldmodel.position
-    			           + ", current way-point: "
-    			           + belief.getCurrentWayPoint()) ;
-    	    		var unstuckPosition = unstuck(belief) ;
-    	    		if (unstuckPosition != null) {
-    	    			// no need to do this anymore; as moveToward now uses the agent's floor-pos as reference
-    	    			// unstuckPosition.y += belief.worldmodel.extent.y ;
-    	    			System.out.println("#### forcing a move past the corner...to " + unstuckPosition) ;
-    	    			//belief.mentalMap.insertNewWayPoint(unstuckPosition);
-    	    			belief.env().moveToward(belief.id, belief.worldmodel().getFloorPosition() ,unstuckPosition) ;
-    	    			try {
-    	    				Thread.sleep(100) ;
-    	    			}
-    	    			catch(Exception e) { } 
-    	    			//belief.env().moveToward(belief.id, belief.worldmodel().getFloorPosition() ,unstuckPosition) ;
-    	    		}
+					if (ENABLE_VERBOSE_LOGGING)
+						System.out.println("#### STUCK, probably cannot get past a turn-corner: @"
+								+ belief.worldmodel.position
+								+ ", current way-point: "
+								+ belief.getCurrentWayPoint());
+					var unstuckPosition = unstuck(belief);
+					if (unstuckPosition != null) {
+						// no need to do this anymore; as moveToward now uses the agent's floor-pos as reference
+						// unstuckPosition.y += belief.worldmodel.extent.y ;
+						if (ENABLE_VERBOSE_LOGGING)
+							System.out.println("#### forcing a move past the corner...to " + unstuckPosition);
+						//belief.mentalMap.insertNewWayPoint(unstuckPosition);
+						belief.env().moveToward(belief.id, belief.worldmodel().getFloorPosition(), unstuckPosition);
+						try {
+							Thread.sleep(100);
+						} catch (Exception e) {
+						}
+						//belief.env().moveToward(belief.id, belief.worldmodel().getFloorPosition() ,unstuckPosition) ;
+					}
     	    		else {
-    	    			// else .... for now do nothing :|
-    	        		System.out.println("#### unfortunately cannot find an unstuck solution...") ;
-    	    		}
+						// else .... for now do nothing :|
+						if (ENABLE_VERBOSE_LOGGING)
+							System.out.println("#### unfortunately cannot find an unstuck solution...");
+					}
     	    	    belief.clearStuckTrackingInfo();
     				return belief ;
     			})

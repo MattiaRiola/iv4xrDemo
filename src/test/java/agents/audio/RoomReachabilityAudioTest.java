@@ -32,8 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static agents.TestSettings.USE_AUDIO_TESTING;
-import static agents.TestSettings.USE_INSTRUMENT;
+import static agents.TestSettings.*;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -175,7 +174,8 @@ public class RoomReachabilityAudioTest {
 		int i = 0;
 		// keep updating the agent
 		while (testingTask.getStatus().inProgress()) {
-			System.out.println("*** " + i + ", " + testAgent.state().id + " @" + testAgent.state().worldmodel.position);
+			if (ENABLE_VERBOSE_LOGGING)
+				System.out.println("*** " + i + ", " + testAgent.state().id + " @" + testAgent.state().worldmodel.position);
 			Thread.sleep(50);
 			i++;
 			testAgent.update();
