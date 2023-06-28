@@ -25,7 +25,7 @@ public class AudioConfig {
 
     public static AudioFormat getDefaultFormat() {
         float sampleRate = UPPER_LIMIT;
-        int sampleSizeInBits = 8;
+        int sampleSizeInBits = 16;
         int channels = 1; //mono
         boolean signed = true;
         boolean bigEndian = true;
@@ -46,7 +46,7 @@ public class AudioConfig {
         }
     }
 
-    public static double getChunkDuration(AudioFormat format, int chunkSize) {
-        return chunkSize / (format.getSampleRate() * format.getSampleSizeInBits());
+    public static double getChunkDuration(AudioFormat format) {
+        return CHUNK_SIZE / (format.getSampleRate() * format.getSampleSizeInBits());
     }
 }
