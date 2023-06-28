@@ -14,18 +14,28 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class FileExplorer {
 
-    public static Set<String> listFilesUsingFilesList(String dir) throws IOException {
+    public static final String DIR_BASE_AUDIO_RES = "src/test/resources/audio/";
+    public static final String DIR_GAME_SOUNDS = DIR_BASE_AUDIO_RES + "game/sounds/";
+    public static final String DIR_SONGS = DIR_BASE_AUDIO_RES + "songs/";
+    public static final String DIR_SONG_RECORDS = DIR_SONGS + "records/";
+    public static final String DIR_SONG_DB = DIR_SONGS + "db/";
+
+    public static final String DIR_MANUALLY_PLAYED = DIR_BASE_AUDIO_RES + "ManuallyPlayed/";
+    public static final String DIR_GAME_RECORDS = DIR_BASE_AUDIO_RES + "game/records/";
+    public static final boolean DELETE_AUDIO_ONCE_FINISHED = false;
+
+
+    public static List<String> listFilesUsingFilesList(String dir) throws IOException {
         try (Stream<Path> stream = Files.list(Paths.get(dir))) {
             return stream
                     .filter(file -> !Files.isDirectory(file))
                     .map(p -> p.getFileName().toString())
-                    .collect(Collectors.toSet());
+                    .collect(Collectors.toList());
         }
     }
 
@@ -47,7 +57,7 @@ public class FileExplorer {
     }
 
     public static List<AudioSignal> readAllSoundsInFolder(String dir) throws IOException, UnsupportedAudioFileException {
-        Set<String> soundFileNames = FileExplorer.listFilesUsingFilesList(dir);
+        List<String> soundFileNames = FileExplorer.listFilesUsingFilesList(dir);
         List<AudioSignal> res = new LinkedList<>();
         for (String soundFileName : soundFileNames) {
 
@@ -69,53 +79,23 @@ public class FileExplorer {
         AudioFormat audioFormat = ais.getFormat();
         int frameLength = (int) ais.getFrameLength();
         int frameSize = (int) audioFormat.getFrameSize();
-        byte[] eightBitByteArray = new byte[frameLength * frameSize];
         if (audioFormat.getSampleSizeInBits() != 16 || audioFormat.getSampleRate() != 44100)
             throw new UnsupportedAudioFileException("Audio " + file + " file must be 16bit and 44100Hz" + " but it is " + audioFormat);
 
+        byte[] eightBitByteArray = new byte[frameLength * frameSize];
+        //int byteRead = ais.read(eightBitByteArray);
 
-        int result = ais.read(eightBitByteArray);
-
+        byte[] byteRead = ais.readAllBytes();
+        System.out.println("byte read: " + byteRead.length);
         int channels = ais.getFormat().getChannels();
-        int[][] samples = new int[Math.max(channels, 2)][frameLength];
+//        if(channels != 1)
+//            throw new UnsupportedAudioFileException("Audio " + file + " file must be mono" + " but it is " + ais.getFormat());
+        //read only one channel
+        boolean isBigEndian = ais.getFormat().isBigEndian();
+        short[] samples = getShortsFromByteArray(byteRead, isBigEndian);
 
-        int sampleIndex = 0;
-        try {
+        //from java array to Stream
 
-            for (int t = 0; t < eightBitByteArray.length; ) {
-                for (int channel = 0; channel < channels; channel++) {
-                    if (ais.getFormat().isBigEndian()) {
-                        int low = eightBitByteArray[t];
-                        t++;
-                        int high = eightBitByteArray[t];
-                        t++;
-                        int sample = getSixteenBitSample(high, low);
-                        samples[channel][sampleIndex] = sample;
-                    } else {
-                        int low = eightBitByteArray[t];
-                        //byte low =  reverseBitsByte(eightBitByteArray[t]);
-
-                        t++;
-                        int high = eightBitByteArray[t];
-                        //byte high = reverseBitsByte(eightBitByteArray[t]);
-                        t++;
-
-                        int sample = getSixteenBitSample(high, low);
-                        samples[channel][sampleIndex] = sample;
-                    }
-
-                }
-                sampleIndex++;
-            }
-            if (audioFormat.getChannels() == 1)
-                samples[1] = samples[0].clone();
-
-
-        } catch (Exception exp) {
-
-            exp.printStackTrace();
-
-        }
 
         AudioSignal res = new AudioSignal(name, samples, ais.getFormat());
         stopWatch.stop();
@@ -125,7 +105,48 @@ public class FileExplorer {
 
     }
 
-    protected static int getSixteenBitSample(int high, int low) {
-        return (high << 8) + (low & 0x00ff);
+    protected static short[] getShortsFromByteArray(byte[] eightBitByteArray, boolean isBigEndian) {
+        if (eightBitByteArray.length % 2 != 0)
+            throw new IllegalArgumentException("byte array must be even, otherwise it can't be split in shorts array");
+
+        short[] samples = new short[eightBitByteArray.length / 2];
+        int sampleIndex = 0;
+        try {
+            for (int t = 0; t < eightBitByteArray.length; ) {
+                if (isBigEndian) {
+                    byte high = eightBitByteArray[t];
+                    t++;
+                    byte low = eightBitByteArray[t];
+                    t++;
+
+                    short sample = getShortFromTwoBytes(high, low);
+                    samples[sampleIndex] = sample;
+                } else {
+                    byte low = eightBitByteArray[t];
+                    //byte low =  reverseBitsByte(eightBitByteArray[t]);
+
+                    t++;
+                    byte high = eightBitByteArray[t];
+                    //byte high = reverseBitsByte(eightBitByteArray[t]);
+                    t++;
+
+                    short sample = getShortFromTwoBytes(high, low);
+                    samples[sampleIndex] = sample;
+                }
+                sampleIndex++;
+            }
+
+
+        } catch (Exception exp) {
+
+            exp.printStackTrace();
+
+        }
+        return samples;
+    }
+
+
+    protected static short getShortFromTwoBytes(byte high, byte low) {
+        return (short) ((high << 8) + (low & 0x0f));
     }
 }

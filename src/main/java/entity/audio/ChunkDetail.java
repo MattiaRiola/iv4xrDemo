@@ -21,6 +21,10 @@ public class ChunkDetail {
         this.chunkHash = getHash();
     }
 
+    public double getTime() {
+        return time;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -53,11 +57,14 @@ public class ChunkDetail {
         return hash(p1, p2, p3, p4);
     }
 
+
     @Override
     public String toString() {
-        return "AudioFingerprint{" +
+        return "ChunkDetail{" +
                 "name='" + name + '\'' +
                 ", time=" + time +
+                ", hash=" + chunkHash +
                 '}';
     }
+
 }

@@ -6,30 +6,31 @@ import entity.math.Complex;
 import service.audio.AudioAnalysis;
 
 import javax.sound.sampled.AudioFormat;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class AudioSignal {
     private String name;
-    private int[][] samples;
-    private Complex[][] spectrum;
+    private short[] samples;
+    private Complex[][] spectrogram;
     private AudioFormat format;
 
-    private Map<Long, List<ChunkDetail>> fingerprint;
+    private Map<Long, Set<ChunkDetail>> fingerprint;
 
 
-    public AudioSignal(String name, int[][] samples, AudioFormat format) {
+    public AudioSignal(String name, short[] samples, AudioFormat format) {
         this.name = name;
         this.samples = samples;
         this.format = format;
-        this.spectrum = AudioAnalysis.FFT32bit(samples[0]);
+        this.spectrogram = AudioAnalysis.evaluateSpectrogram(samples);
         this.fingerprint = AudioAnalysis.analyse(this);
         System.out.println(
-                name + " loaded with:\n\t" + samples.length + " samples" +
-                        "\n\tgenerating " + fingerprint.size() + " fingerprints" +
-                        "\n\tusing a " + spectrum.length + " chunks long spectrum" +
-                        "\n\twith fuz factor of: " + AudioConfig.FUZ_FACTOR +
-                        "\n\tminimum chunk duration: " + AudioConfig.getChunkDuration(this.format, this.samples.length) + " seconds"
+                name + " loaded:" + samples.length +
+                        "\n\t- samples" + " ( = " + AudioAnalysis.getTimestampOfSample(samples.length, format) + " seconds)" +
+                        "\n\t- generating " + fingerprint.size() + " fingerprints" +
+                        "\n\t- using a " + spectrogram.length + " chunks long spectrum" +
+                        "\n\t- with fuz factor of: " + AudioConfig.FUZ_FACTOR +
+                        String.format("\n\t- minimum chunk duration: %.3f  seconds", AudioConfig.getChunkDuration(this.format))
         );
     }
 
@@ -37,24 +38,20 @@ public class AudioSignal {
         return name;
     }
 
-    public Map<Long, List<ChunkDetail>> getFingerprint() {
+    public Map<Long, Set<ChunkDetail>> getFingerprint() {
         return fingerprint;
     }
 
-    public int[][] getSamples() {
+    public short[] getSamples() {
         return samples;
     }
 
-    public void setSamples(int[][] samples) {
+    public void setSamples(short[] samples) {
         this.samples = samples;
     }
 
-    public Complex[][] getSpectrum() {
-        return spectrum;
-    }
-
-    public void setSpectrum(Complex[][] spectrum) {
-        this.spectrum = spectrum;
+    public Complex[][] getSpectrogram() {
+        return spectrogram;
     }
 
     public AudioFormat getFormat() {
@@ -65,20 +62,20 @@ public class AudioSignal {
         this.format = format;
     }
 
+    /**
+     * Prints the duration of the audio file
+     */
+    public double getAudioDuration() {
+        return (double) samples.length / format.getFrameRate();
+    }
+
     @Override
     public String toString() {
         return "AudioSignal{" +
                 "name='" + name + '\'' +
+                " [ " + getAudioDuration() + " seconds ] " +
                 ", format=" + format +
                 '}';
     }
 
-    public String getSamplesString() {
-        String str = "(";
-        for (int i = 0; i < samples.length; i++) {
-            str = str.concat("channel " + i + ": # samples: " + samples[i].length + ",");
-        }
-        str = str.concat(")");
-        return str;
-    }
 }

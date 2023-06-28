@@ -9,7 +9,7 @@ import java.awt.geom.Line2D;
 //Extends JPanel class
 public class Plot2D extends JPanel{
     //initialize coordinates
-    int[] cord = {0,0,0,0,0,0,0};
+    short[] cord = {0, 0, 0, 0, 0, 0, 0};
     int marg = 60;
 
     boolean withLine = true;
@@ -19,11 +19,12 @@ public class Plot2D extends JPanel{
         super();
     }
 
-    Plot2D(int[] cord){
+    Plot2D(short[] cord) {
         super();
         this.cord = cord;
     }
-    Plot2D(int[] cord, Color color){
+
+    Plot2D(short[] cord, Color color) {
         super();
         this.cord = cord;
         this.color = color;
@@ -84,7 +85,7 @@ public class Plot2D extends JPanel{
     }
 
     //main() method start
-    public static void plotArray(int[] data, Color color, String title) {
+    public static void plotArray(short[] data, Color color, String title) {
 
         //create an instance of JFrame class
         JFrame frame = new JFrame(title);
