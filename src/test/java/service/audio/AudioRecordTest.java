@@ -19,6 +19,7 @@ public class AudioRecordTest {
         int newInt = (newhigh << 8) + (newlow & 0x00ff);
     }
 
+
     public byte reverseBitsByte(byte x) {
         int intSize = 8;
         byte y = 0;

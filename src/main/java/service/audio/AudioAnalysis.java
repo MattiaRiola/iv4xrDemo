@@ -42,13 +42,14 @@ public class AudioAnalysis {
 
         //for each hash in the fingerprint of inputSound
         for (Map.Entry<Long, Set<ChunkDetail>> inputFingerprintsEntry : inputFingerprintMap.entrySet()) {
-            var inputChunkHash = inputFingerprintsEntry.getKey();
-            var inputChunks = inputFingerprintsEntry.getValue();
+            Long inputChunkHash = inputFingerprintsEntry.getKey();
+            Set<ChunkDetail> inputChunks = inputFingerprintsEntry.getValue();
             if (fingerprintsDb.containsKey(inputChunkHash)) {
                 //found a match in the db
                 Set<ChunkDetail> dbChunks = fingerprintsDb.get(inputFingerprintsEntry.getKey());
 
                 //make match points
+                //TODO: adjust this match points, an AudioMatch should have 1 inputChunk and N dbChunks
                 for (ChunkDetail dbChunk : dbChunks) {
                     for (ChunkDetail inputChunk : inputChunks) {
                         Set<AudioMatch> matches = matchesPoints.getOrDefault(dbChunk.name, new TreeSet<>(Comparator.comparing(AudioMatch::getRecordTime)));
@@ -83,12 +84,11 @@ public class AudioAnalysis {
         return matches.entrySet().stream()
                 .peek(e ->
                         e.setValue(
-                                e.getValue().stream().filter(m -> m.getRecordTime() == time).collect(Collectors.toSet())
+                                e.getValue().stream().filter(m -> time - timeWindowSize <= m.getRecordTime() && m.getRecordTime() <= time + timeWindowSize).collect(Collectors.toSet())
                         )
                 )
                 .filter(e -> e.getValue().size() > 0)
                 .max(Comparator.comparingInt(e -> e.getValue().size()))
-                //TODO: check if the time is in the window
                 .get().getKey();
     }
 

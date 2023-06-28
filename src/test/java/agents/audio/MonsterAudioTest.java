@@ -31,12 +31,13 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static agents.TestSettings.USE_AUDIO_TESTING;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
 import static nl.uu.cs.aplib.AplibEDSL.SUCCESS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static service.audio.AudioAnalysisTest.*;
+import static utils.FileExplorer.*;
 
 /**
  * A simple test to demonstrate using iv4xr agents to test the Lab Recruits game.
@@ -96,7 +97,7 @@ public class MonsterAudioTest {
 				labRecruitsTestServer.closeAudioRecorder();
 			}
 
-			Map<String, List<AudioMatch>> matches = getMatchesFromGameRecords();
+			Map<String, Set<AudioMatch>> matches = getMatchesFromGameRecords();
 
 			//then
 			List<String> soundsFound = new LinkedList<>(matches.keySet());
@@ -180,7 +181,7 @@ public class MonsterAudioTest {
 
 	}
 
-	private static Map<String, List<AudioMatch>> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
+	private static Map<String, Set<AudioMatch>> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
 
 		List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
 		Assertions.assertEquals(1, gameRecords.size(), "too many records in the folder, only one record is analysed");
