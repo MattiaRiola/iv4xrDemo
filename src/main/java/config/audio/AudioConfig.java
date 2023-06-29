@@ -8,6 +8,8 @@ public class AudioConfig {
     public static final int UPPER_LIMIT = 44100;
     public static final int[] RANGE = new int[]{40, 80, 120, 180, UPPER_LIMIT + 1};
     public static int FUZ_FACTOR = 2;
+
+    public static float FALSE_POSITIVE_THRESHOLD = 0.3f;
     /**
      * CHUNK_SIZE in terms of how many samples should be stored inside a chunk
      * <p>
@@ -31,7 +33,7 @@ public class AudioConfig {
         int sampleSizeInBits = 16;
         int channels = 1; //mono
         boolean signed = true;
-        boolean bigEndian = true;
+        boolean bigEndian = false;
         return new AudioFormat(sampleRate, sampleSizeInBits, channels, signed, bigEndian);
     }
 
