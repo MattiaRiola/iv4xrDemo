@@ -54,6 +54,5 @@ public class AudioAnalyserTest {
         double samplePeriod = 1d / sampleRate;
         double actualTime3 = AudioAnalysis.getTimeOfSample(3, defaultAudioFormat);
         Assertions.assertEquals(3 * samplePeriod, actualTime3);
-
     }
 }
