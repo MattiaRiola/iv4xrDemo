@@ -11,15 +11,12 @@ package agents.audio;
 import agents.LabRecruitsTestAgent;
 import agents.TestSettings;
 import agents.tactics.GoalLib;
-import config.audio.ChunkSize;
 import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import environments.LabRecruitsConfig;
 import environments.LabRecruitsEnvironment;
-import game.LabRecruitsTestServer;
-import logger.JsonLoggerInstrument;
-import nl.uu.cs.aplib.mainConcepts.Environment;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import service.audio.AudioAnalysis;
 import utils.FileExplorer;
 import world.BeliefState;
@@ -28,15 +25,14 @@ import world.LabWorldModel;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import static agents.TestSettings.USE_AUDIO_TESTING;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
 import static nl.uu.cs.aplib.AplibEDSL.SUCCESS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static utils.FileExplorer.*;
+import static org.junit.jupiter.api.Assertions.fail;
+import static utils.FileExplorer.DIR_GAME_RECORDS;
 
 /**
  * A simple test to demonstrate using iv4xr agents to test the Lab Recruits game.
@@ -44,46 +40,14 @@ import static utils.FileExplorer.*;
  * the player initial position, which it is if the door guarding it can be opened.
  * This in turn requires a series of switches and other doors to be opened.
  */
-public class MonsterAudioTest {
-	static List<AudioSignal> readAudios = new LinkedList<>();
-	private static LabRecruitsTestServer labRecruitsTestServer;
+public class MonsterAudioTest extends AudioAbstractTest {
 
-	private static final boolean SKIP_GAMEPLAY = false;
-
-	@BeforeAll
-	static void start() throws InterruptedException, UnsupportedAudioFileException, IOException {
-		Assumptions.assumeTrue(USE_AUDIO_TESTING, "audio testing disabled");
-		AudioAnalysis.changeConfigBySeconds(3, ChunkSize.SMALL);
-
-		List<AudioSignal> gameSounds = FileExplorer.readAllSoundsInFolder(DIR_GAME_SOUNDS);
-		readAudios.addAll(gameSounds);
-		AudioAnalysis.loadAudioFingerprint(gameSounds);
-
-		if (!SKIP_GAMEPLAY) {
-			String labRecruitesExeRootDir = System.getProperty("user.dir");
-			labRecruitsTestServer = TestSettings.start_LabRecruitsTestServerWithAudio(labRecruitesExeRootDir, 10);
-		}
-
-	}
-
-
-	@AfterAll
-	static void close() throws IOException {
-		if (labRecruitsTestServer != null) labRecruitsTestServer.close();
-
-		if (USE_AUDIO_TESTING && DELETE_AUDIO_ONCE_FINISHED)
-			FileExplorer.deleteFilesInFolder(DIR_GAME_RECORDS);
-	}
-
-	void instrument(Environment env) {
-		env.registerInstrumenter(new JsonLoggerInstrument()).turnOnDebugInstrumentation();
-	}
 
 	/**
 	 * A test to verify that the east closet is reachable.
 	 */
 	@Test
-	public void gameplayAudioTestDingAndFiresizzleTest() throws InterruptedException {
+	public void gameplayAudioMonsterAttackTest() throws InterruptedException {
 
 		var buttonToTest = "button1";
 		var doorToTest = "door1";
@@ -102,6 +66,7 @@ public class MonsterAudioTest {
 			Assertions.assertFalse(matches.isEmpty(), "No matches found in the game records");
 			Assertions.assertTrue(AudioAnalysis.getMatchWithScores(matches).containsKey("monsterattack.wav"), "monsterattack.wav not found in the game records");
 
+			fail("TODO: check the presence of monster sounds when the player is attacked");
 		} catch (IOException | UnsupportedAudioFileException e) {
 			System.err.println("Error: " + e.getMessage());
 		} finally {
@@ -182,7 +147,7 @@ public class MonsterAudioTest {
 	private static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
 
 		List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
-		Assertions.assertEquals(1, gameRecords.size(), "too many records in the folder, only one record is analysed");
+		Assertions.assertEquals(1, gameRecords.size(), "only one record is analysed");
 		AudioSignal gameRecord = gameRecords.get(0);
 
 		System.out.println("Analysing: " + gameRecord.getName());
