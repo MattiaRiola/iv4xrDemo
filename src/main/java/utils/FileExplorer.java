@@ -26,6 +26,7 @@ public class FileExplorer {
     public static final String DIR_SONG_DB = DIR_SONGS + "db/";
 
     public static final String DIR_MANUALLY_PLAYED = DIR_BASE_AUDIO_RES + "ManuallyPlayed/";
+    public static final String DIR_GAME_RECORDS_SAVED = DIR_BASE_AUDIO_RES + "game/saved/";
     public static final String DIR_GAME_RECORDS = DIR_BASE_AUDIO_RES + "game/records/";
     public static final boolean DELETE_AUDIO_ONCE_FINISHED = false;
 
@@ -57,6 +58,8 @@ public class FileExplorer {
     }
 
     public static List<AudioSignal> readAllSoundsInFolder(String dir) throws IOException, UnsupportedAudioFileException {
+        System.out.println("#######################################");
+        System.out.println("READING FILE IN " + dir);
         List<String> soundFileNames = FileExplorer.listFilesUsingFilesList(dir);
         List<AudioSignal> res = new LinkedList<>();
         for (String soundFileName : soundFileNames) {
@@ -65,6 +68,7 @@ public class FileExplorer {
 
             res.add(audio);
         }
+        System.out.println("#######################################");
         return res;
     }
 
@@ -88,8 +92,8 @@ public class FileExplorer {
         byte[] byteRead = ais.readAllBytes();
         System.out.println("byte read: " + byteRead.length);
         int channels = ais.getFormat().getChannels();
-//        if(channels != 1)
-//            throw new UnsupportedAudioFileException("Audio " + file + " file must be mono" + " but it is " + ais.getFormat());
+        if (channels != 1)
+            throw new UnsupportedAudioFileException("Audio " + file + " file must be mono" + " but it is " + ais.getFormat());
         //read only one channel
         boolean isBigEndian = ais.getFormat().isBigEndian();
         short[] samples = getShortsFromByteArray(byteRead, isBigEndian);

@@ -30,7 +30,6 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static agents.TestSettings.USE_AUDIO_TESTING;
@@ -97,12 +96,11 @@ public class MonsterAudioTest {
 				labRecruitsTestServer.closeAudioRecorder();
 			}
 
-			Map<String, Set<AudioMatch>> matches = getMatchesFromGameRecords();
+			Set<AudioMatch> matches = getMatchesFromGameRecords();
 
 			//then
-			List<String> soundsFound = new LinkedList<>(matches.keySet());
-			Assertions.assertFalse(soundsFound.isEmpty(), "No matches found in the game records");
-			Assertions.assertTrue(soundsFound.contains("monsterattack.wav"), "monsterattack.wav not found in the game records, found: " + soundsFound);
+			Assertions.assertFalse(matches.isEmpty(), "No matches found in the game records");
+			Assertions.assertTrue(AudioAnalysis.getMatchWithScores(matches).containsKey("monsterattack.wav"), "monsterattack.wav not found in the game records");
 
 		} catch (IOException | UnsupportedAudioFileException e) {
 			System.err.println("Error: " + e.getMessage());
@@ -181,7 +179,7 @@ public class MonsterAudioTest {
 
 	}
 
-	private static Map<String, Set<AudioMatch>> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
+	private static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
 
 		List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
 		Assertions.assertEquals(1, gameRecords.size(), "too many records in the folder, only one record is analysed");
@@ -189,7 +187,7 @@ public class MonsterAudioTest {
 
 		System.out.println("Analysing: " + gameRecord.getName());
 		var matches = AudioAnalysis.searchMatch(gameRecord);
-		Assertions.assertNotEquals(matches.keySet().size(), gameRecords.size());
+		Assertions.assertNotEquals(matches.size(), gameRecords.size());
 
 		return matches;
 	}

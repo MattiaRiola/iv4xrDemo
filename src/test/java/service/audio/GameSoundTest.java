@@ -1,6 +1,8 @@
 package service.audio;
 
 
+import config.audio.AudioConfig;
+import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -11,11 +13,11 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static utils.FileExplorer.DIR_GAME_RECORDS_SAVED;
 import static utils.FileExplorer.DIR_GAME_SOUNDS;
-import static utils.FileExplorer.DIR_MANUALLY_PLAYED;
 
 public class GameSoundTest {
 
@@ -28,6 +30,7 @@ public class GameSoundTest {
         List<AudioSignal> gameSounds = FileExplorer.readAllSoundsInFolder(DIR_GAME_SOUNDS);
         readAudios.addAll(gameSounds);
         AudioAnalysis.loadAudioFingerprint(gameSounds);
+        AudioConfig.CHUNK_SIZE = 256;
     }
 
 
@@ -47,27 +50,23 @@ public class GameSoundTest {
 
         assertEquals(ding1Audio.getFingerprint().keySet(), ding1AudioCopy.getFingerprint().keySet());
         assertNotEquals(ding1Audio.getFingerprint().keySet(), ding2Audio.getFingerprint().keySet());
-        var matches = AudioAnalysis.searchMatch(ding1Audio);
-        assertNotEquals(0, matches.size(), "no matches found");
-
+        Set<AudioMatch> matches = AudioAnalysis.searchMatch(ding1Audio);
+        assertEquals(ding1Audio.getSpectrogram().length, matches.size(), "Some chunk aren't matched with same sound");
+        assertTrue(AudioAnalysis.getBestMatch(matches).contains("ding1"), "best match is not ding1");
     }
-
 
     @Test
-    public void manuallyPlayedSoundsComparisonTest() throws UnsupportedAudioFileException, IOException {
-        String manuallyPlayedSoundFile = "academo_record_manually_played_soundRec.wav";
+    public void inGameRecordedSoundsComparisonTest() throws UnsupportedAudioFileException, IOException {
+        String reachabilityTestAudioFile = "RoomReachabilityAudioRecorded.wav";
 
-        AudioSignal manuallyPlayedSound = FileExplorer.readWavFile(DIR_MANUALLY_PLAYED + manuallyPlayedSoundFile, "manually_played");
-        var matches = AudioAnalysis.searchMatch(manuallyPlayedSound);
+        AudioSignal reachabilityTestAudio = FileExplorer.readWavFile(DIR_GAME_RECORDS_SAVED + reachabilityTestAudioFile, reachabilityTestAudioFile);
+        var matches = AudioAnalysis.searchMatch(reachabilityTestAudio);
         assertNotEquals(0, matches.size(), "no matches found");
         AudioAnalysis.getAudiosWithOrderedChunksDetails(readAudios);
-        AudioAnalysis.getAudiosWithOrderedChunksDetails(List.of(manuallyPlayedSound));
+        AudioAnalysis.getAudiosWithOrderedChunksDetails(List.of(reachabilityTestAudio));
+
+        fail("TODO: check audio matches in time windows");
+
     }
-
-
-
-
-
-
 
 }

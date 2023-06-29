@@ -1,37 +1,32 @@
 package entity.audio;
 
+import java.util.Set;
+
 public class AudioMatch {
 
+    private final ChunkDetail inputChunk;
 
-    public final double recordTime;
-    public final double dbTime;
-    public final String name;
-    public long hash;
+    private final Set<ChunkDetail> dbChunks;
 
-    public AudioMatch(String name, double recordTime, double dbTime, long hash) {
-        this.name = name;
-        this.recordTime = recordTime;
-        this.dbTime = dbTime;
-        this.hash = hash;
+
+    public AudioMatch(ChunkDetail inputChunk, Set<ChunkDetail> dbChunks) {
+        this.inputChunk = inputChunk;
+        this.dbChunks = dbChunks;
     }
 
-    public double getRecordTime() {
-        return recordTime;
+    public ChunkDetail getInputChunk() {
+        return inputChunk;
     }
 
-    public double getDbTime() {
-        return dbTime;
-    }
-
-    public String getName() {
-        return name;
+    public Set<ChunkDetail> getDbChunks() {
+        return dbChunks;
     }
 
     @Override
     public String toString() {
-        return " At " + String.format(" (%.3f)", recordTime) + ": " +
-                name + String.format(" (%.3f)", dbTime) +
-                " hash: " + hash;
+
+        return " At " + inputChunk + " matches: " +
+                dbChunks;
     }
 
 }

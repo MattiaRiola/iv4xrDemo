@@ -24,10 +24,10 @@ public class AudioAnalysis {
             fingerprintMap.forEach((k, chunkDetails) ->
             {
                 for (ChunkDetail chunkDetail : chunkDetails) {
-                    Set<ChunkDetail> fingerprintsList = fingerprintsDb
+                    Set<ChunkDetail> chunks = fingerprintsDb
                             .getOrDefault(chunkDetail.chunkHash, new TreeSet<>(Comparator.comparing(ChunkDetail::getTime)));
-                    fingerprintsList.add(chunkDetail);
-                    fingerprintsDb.put(chunkDetail.chunkHash, fingerprintsList);
+                    chunks.add(chunkDetail);
+                    fingerprintsDb.put(chunkDetail.chunkHash, chunks);
                 }
             });
         }
@@ -35,43 +35,51 @@ public class AudioAnalysis {
     }
 
 
-    public static Map<String, Set<AudioMatch>> searchMatch(AudioSignal input) {
+    public static Set<AudioMatch> searchMatch(AudioSignal input) {
         System.out.println("Searching match for: " + input.getName());
-        Map<String, Set<AudioMatch>> matchesPoints = new HashMap<>();
+        Set<AudioMatch> matches = new TreeSet<>(Comparator.comparing(m -> m.getInputChunk().time));
         Map<Long, Set<ChunkDetail>> inputFingerprintMap = input.getFingerprint();
 
         //for each hash in the fingerprint of inputSound
-        for (Map.Entry<Long, Set<ChunkDetail>> inputFingerprintsEntry : inputFingerprintMap.entrySet()) {
-            Long inputChunkHash = inputFingerprintsEntry.getKey();
-            Set<ChunkDetail> inputChunks = inputFingerprintsEntry.getValue();
-            if (fingerprintsDb.containsKey(inputChunkHash)) {
-                //found a match in the db
-                Set<ChunkDetail> dbChunks = fingerprintsDb.get(inputFingerprintsEntry.getKey());
-
-                //make match points
-                //TODO: adjust this match points, an AudioMatch should have 1 inputChunk and N dbChunks
-                for (ChunkDetail dbChunk : dbChunks) {
-                    for (ChunkDetail inputChunk : inputChunks) {
-                        Set<AudioMatch> matches = matchesPoints.getOrDefault(dbChunk.name, new TreeSet<>(Comparator.comparing(AudioMatch::getRecordTime)));
-                        //add matches
-                        AudioMatch match = new AudioMatch(dbChunk.name, inputChunk.time, dbChunk.time, dbChunk.chunkHash);
-                        matches.add(match);
-                        //System.out.println("Match: "+match);
-
-                        matchesPoints.put(dbChunk.name, matches);
+        inputFingerprintMap.forEach(
+                (inputChunkHash, inputChunks) -> {
+                    //if the input hash is present in the db
+                    //NOTE: since the key is the hash of inputChunks (stored as values for that key)
+                    //      I won't have a chunk in multiple keys thanks to hash properties
+                    //        if(inputChunk1 == inputChunk2) -> (Hash(inputChunk1) == Hash(inputChunk2))
+                    var dbChunks = fingerprintsDb.get(inputChunkHash);
+                    if (dbChunks != null) {
+                        //add matches for that inputChunk hash
+                        //every inputChunk with that hash will have a new match with all the chunks in db with that hash
+                        for (ChunkDetail inputChunk : inputChunks) {
+                            AudioMatch match = new AudioMatch(inputChunk, dbChunks);
+                            matches.add(match);
+                        }
                     }
-
                 }
-            }
-        }
-        printMatches(matchesPoints);
-        return matchesPoints;
+        );
+
+        //printMatches(matches);
+        return matches;
     }
 
-    public static String getBestMatch(Map<String, Set<AudioMatch>> matches) {
-        return matches.entrySet().stream()
-                .max(Comparator.comparingInt(e -> e.getValue().size()))
-                .get().getKey();
+
+    public static String getBestMatch(Set<AudioMatch> matches) {
+        Map<String, Integer> matchWithScores = getMatchWithScores(matches); // Merge function, sums up the values in case of collision
+        return matchWithScores.entrySet().stream()
+                .max(Comparator.comparingInt(Map.Entry::getValue))
+                .get()
+                .getKey();
+
+    }
+
+    public static Map<String, Integer> getMatchWithScores(Set<AudioMatch> matches) {
+        return matches.stream()
+                .flatMap(m -> m.getDbChunks().stream())
+                .collect(Collectors.toMap(
+                        ChunkDetail::getName, // Key mapper
+                        chunk -> 1,     // Value mapper, each chunk is counted as 1
+                        Integer::sum));
     }
 
     /**
@@ -80,26 +88,19 @@ public class AudioAnalysis {
      * @param timeWindowSize the size of time window analysed (time must be between time-timeWindowSize and time+timeWindowSize)
      * @return the audio with higher match rate in that time window
      */
-    public static String getBestMatchAtTime(Map<String, Set<AudioMatch>> matches, long time, long timeWindowSize) {
-        return matches.entrySet().stream()
-                .peek(e ->
-                        e.setValue(
-                                e.getValue().stream().filter(m -> time - timeWindowSize <= m.getRecordTime() && m.getRecordTime() <= time + timeWindowSize).collect(Collectors.toSet())
-                        )
-                )
-                .filter(e -> e.getValue().size() > 0)
-                .max(Comparator.comparingInt(e -> e.getValue().size()))
-                .get().getKey();
+    public static String getBestMatchAtTime(Set<AudioMatch> matches, double time, double timeWindowSize) {
+        Set<AudioMatch> filteredMatches = getMatchesAtTime(matches, time, timeWindowSize);
+        Map<String, Integer> matchWithScores = getMatchWithScores(filteredMatches); // Merge function, sums up the values in case of collision
+        return matchWithScores.entrySet().stream()
+                .max(Comparator.comparingInt(Map.Entry::getValue))
+                .get()
+                .getKey();
     }
 
-    public static byte reverseBitsByte(byte x) {
-        int intSize = 8;
-        byte y = 0;
-        for (int position = intSize - 1; position > 0; position--) {
-            y += ((x & 1) << position);
-            x >>= 1;
-        }
-        return y;
+
+    public static Set<AudioMatch> getMatchesAtTime(Set<AudioMatch> matches, double time, double timeWindowSize) {
+        return matches.stream().filter(m -> m.getInputChunk().isInTimeTimeWindow(time, timeWindowSize))
+                .collect(Collectors.toSet());
     }
 
 
@@ -190,7 +191,7 @@ public class AudioAnalysis {
         return fingerprintsMap;
     }
 
-    public static double getTimestampOfSample(long sampleIndex, AudioFormat format) {
+    public static double getTimeOfSample(long sampleIndex, AudioFormat format) {
         //return (((double) sampleIndex / format.getSampleRate()) * 1000);
         return ((double) sampleIndex / format.getSampleRate());
     }
@@ -209,14 +210,8 @@ public class AudioAnalysis {
         setChunkSize(chunkSize);
     }
 
-    public static void printMatches(Map<String, Set<AudioMatch>> matches) {
-        matches.forEach((key, value) -> {
-
-            System.out.println("Matches for: " + value.stream().map(AudioMatch::getName).distinct().collect(Collectors.toList()));
-            value.forEach(
-                    m -> System.out.println("\t" + m)
-            );
-        });
+    public static void printMatches(Set<AudioMatch> matches) {
+        matches.forEach(System.out::println);
     }
 
     /**

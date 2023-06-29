@@ -26,7 +26,7 @@ public class AudioSignal {
         this.fingerprint = AudioAnalysis.analyse(this);
         System.out.println(
                 name + " loaded:" + samples.length +
-                        "\n\t- samples" + " ( = " + AudioAnalysis.getTimestampOfSample(samples.length, format) + " seconds)" +
+                        "\n\t- samples" + " ( = " + AudioAnalysis.getTimeOfSample(samples.length, format) + " seconds)" +
                         "\n\t- generating " + fingerprint.size() + " fingerprints" +
                         "\n\t- using a " + spectrogram.length + " chunks long spectrum" +
                         "\n\t- with fuz factor of: " + AudioConfig.FUZ_FACTOR +

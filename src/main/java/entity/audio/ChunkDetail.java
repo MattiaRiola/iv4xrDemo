@@ -1,10 +1,13 @@
 package entity.audio;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 import static config.audio.AudioConfig.FUZ_FACTOR;
 
 public class ChunkDetail {
+
+
     public final String name;
     public final double time;
     public final long index;
@@ -25,19 +28,28 @@ public class ChunkDetail {
         return time;
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ChunkDetail that = (ChunkDetail) o;
-        return Arrays.equals(highScores, that.highScores) && Arrays.equals(relatedFrequency, that.relatedFrequency);
+        return Double.compare(that.time, time) == 0 && index == that.index && chunkHash == that.chunkHash && Objects.equals(name, that.name) && Arrays.equals(highScores, that.highScores) && Arrays.equals(relatedFrequency, that.relatedFrequency);
     }
 
     @Override
     public int hashCode() {
-        int result = Arrays.hashCode(highScores);
+        int result = Objects.hash(name, time, index, chunkHash);
+        result = 31 * result + Arrays.hashCode(highScores);
         result = 31 * result + Arrays.hashCode(relatedFrequency);
         return result;
+    }
+
+    public boolean isInTimeTimeWindow(double time, double timeWindow) {
+        return Math.abs(this.time - time) < timeWindow;
     }
 
     /**
@@ -60,11 +72,8 @@ public class ChunkDetail {
 
     @Override
     public String toString() {
-        return "ChunkDetail{" +
-                "name='" + name + '\'' +
-                ", time=" + time +
-                ", hash=" + chunkHash +
-                '}';
+        return '\'' + name + '\'' +
+                String.format("(%.3f s)", time);
     }
 
 }

@@ -32,6 +32,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static agents.TestSettings.*;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
@@ -97,11 +99,10 @@ public class RoomReachabilityAudioTest {
 				labRecruitsTestServer.closeAudioRecorder();
 			}
 
-			Map<String, Set<AudioMatch>> matches = getMatchesFromGameRecords();
+			Set<AudioMatch> matches = getMatchesFromGameRecords();
 
 			//then
-			List<String> soundsFound = new LinkedList<>(matches.keySet());
-			System.out.println("Matches:");
+			List<String> soundsFound = getSoundsFound(matches);
 			Assertions.assertFalse(soundsFound.isEmpty(), "No matches found in the game records");
 			Assertions.assertTrue(soundsFound.contains("ding1.wav"), "ding1.wav not found in the game records, found: " + soundsFound);
 			Assertions.assertTrue(soundsFound.contains("ding1.wav"), "firesizzle.wav not found in the game records, found: " + soundsFound);
@@ -194,7 +195,7 @@ public class RoomReachabilityAudioTest {
 		testAgent.printStatus();
 	}
 
-	private static Map<String, Set<AudioMatch>> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
+	private static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
 
 		List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
 		Assertions.assertEquals(1, gameRecords.size(), "too many records in the folder, only one record is analysed");
@@ -203,5 +204,25 @@ public class RoomReachabilityAudioTest {
 		System.out.println("Analysing: " + gameRecord.getName());
 
 		return AudioAnalysis.searchMatch(gameRecord);
+	}
+
+	/**
+	 * @param matches
+	 * @return return distinct sounds found in the matches
+	 */
+	public static List<String> getSoundsFound(Set<AudioMatch> matches) {
+		return matches.stream()
+				.flatMap(m -> m.getDbChunks().stream())
+				.map(c -> c.name)
+				.distinct()
+				.collect(Collectors.toList());
+	}
+
+	public static Map<String, Integer> getSoundsFoundWithNumOfOccurencies(Set<AudioMatch> matches) {
+		return matches.stream()
+				.flatMap(m -> m.getDbChunks().stream())
+				.map(c -> c.name)
+				.collect(Collectors.groupingBy(Function.identity(), Collectors.summingInt(e -> 1)));
+
 	}
 }
