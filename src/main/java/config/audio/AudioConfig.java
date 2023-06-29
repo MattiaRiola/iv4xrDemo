@@ -7,6 +7,10 @@ public class AudioConfig {
     public static final int LOWER_LIMIT = 10;
     public static final int UPPER_LIMIT = 44100;
     public static final int[] RANGE = new int[]{40, 80, 120, 180, UPPER_LIMIT + 1};
+    /**
+     * Record duration in ms (it must be consistent with the duration of the audio recorder in the python script)
+     */
+    public static final long RECORD_DURATION = 25000;
     public static int FUZ_FACTOR = 2;
 
     public static float FALSE_POSITIVE_THRESHOLD = 0.3f;

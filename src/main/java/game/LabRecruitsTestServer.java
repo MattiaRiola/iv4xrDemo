@@ -7,9 +7,11 @@ at Utrecht University within the Software and Game project course.
 
 package game;
 
+import config.audio.AudioConfig;
 import environments.LabRecruitsEnvironment;
 import helperclasses.Util;
 import logger.PrintColor;
+import org.apache.commons.lang3.time.StopWatch;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -20,6 +22,8 @@ public class LabRecruitsTestServer {
     String pythonScriptPath;
     private Process server;
     private Process audioRecorder;
+
+    private StopWatch recorderStopWatch = new StopWatch();
 
     // cannot be called outside this class
     public LabRecruitsTestServer(Boolean useGraphics) {
@@ -57,6 +61,9 @@ public class LabRecruitsTestServer {
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         audioRecorder = pb.start();
         System.out.println("Python audio recorder started");
+        recorderStopWatch = new StopWatch();
+        recorderStopWatch.reset();
+        recorderStopWatch.start();
 
     }
 
@@ -113,12 +120,16 @@ public class LabRecruitsTestServer {
         }
     }
     public void closeAudioRecorder(){
-        if (audioRecorder != null){
+        if (audioRecorder != null && !audioRecorder.isAlive()) {
             try {
                 System.out.println("Closing Python audio recorder ...");
+                long recordtime = recorderStopWatch.getTime();
+                Thread.sleep(AudioConfig.RECORD_DURATION - recordtime + 2000);
+
                 audioRecorder.waitFor(15, TimeUnit.SECONDS);
                 audioRecorder.destroy();
                 audioRecorder.waitFor();
+                audioRecorder = null;
                 System.out.println("Python audio recorder closed");
             } catch (InterruptedException e) {
                 e.printStackTrace();

@@ -1,7 +1,6 @@
 package service.audio;
 
 import config.audio.AudioConfig;
-import config.audio.ChunkSize;
 import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import entity.audio.ChunkDetail;
@@ -63,6 +62,19 @@ public class AudioAnalysis {
         return matches;
     }
 
+    /**
+     * @param matches
+     * @return Map of sound names with the related number of matches
+     */
+    public static Map<String, Integer> getMatchStat(Set<AudioMatch> matches) {
+        return matches.stream()
+                .flatMap(m -> m.getDbChunks().stream())
+                .collect(Collectors.toMap(
+                        ChunkDetail::getName, // Key mapper
+                        chunk -> 1,     // Value mapper, each chunk is counted as 1
+                        Integer::sum));
+    }
+
 
     public static String getBestMatch(Set<AudioMatch> matches) {
         Map<String, Integer> matchWithScores = getMatchWithScores(matches); // Merge function, sums up the values in case of collision
@@ -90,6 +102,8 @@ public class AudioAnalysis {
      */
     public static String getBestMatchAtTime(Set<AudioMatch> matches, double time, double timeWindowSize) {
         Set<AudioMatch> filteredMatches = getMatchesAtTime(matches, time, timeWindowSize);
+        if (filteredMatches.isEmpty())
+            return null;
         Map<String, Integer> matchWithScores = getMatchWithScores(filteredMatches); // Merge function, sums up the values in case of collision
         return matchWithScores.entrySet().stream()
                 .max(Comparator.comparingInt(Map.Entry::getValue))
@@ -200,18 +214,8 @@ public class AudioAnalysis {
         return chunkIndex * AudioConfig.getChunkDuration(format);
     }
 
-    public static void changeConfig(Integer fuzFactor, Integer chunkSize) {
-        AudioConfig.FUZ_FACTOR = fuzFactor;
-        AudioConfig.CHUNK_SIZE = chunkSize;
-    }
-
-    public static void changeConfigBySeconds(int fuzFactor, ChunkSize chunkSize) {
-        AudioConfig.FUZ_FACTOR = fuzFactor;
-        setChunkSize(chunkSize);
-    }
-
-    public static void printMatches(Set<AudioMatch> matches) {
-        matches.forEach(System.out::println);
+    public static String matchesToString(Set<AudioMatch> matches) {
+        return matches.stream().map(AudioMatch::toString).collect(Collectors.joining("\n"));
     }
 
     /**
