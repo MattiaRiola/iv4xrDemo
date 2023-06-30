@@ -3,17 +3,9 @@ package config.audio;
 import javax.sound.sampled.AudioFormat;
 
 public class AudioConfig {
-
-    public static final int LOWER_LIMIT = 10;
-    public static final int UPPER_LIMIT = 44100;
-    public static final int[] RANGE = new int[]{40, 80, 120, 180, UPPER_LIMIT + 1};
-    /**
-     * Record duration in ms (it must be consistent with the duration of the audio recorder in the python script)
-     */
-    public static final long RECORD_DURATION = 25000;
     public static int FUZ_FACTOR = 2;
-
     public static float FALSE_POSITIVE_THRESHOLD = 0.3f;
+
     /**
      * CHUNK_SIZE in terms of how many samples should be stored inside a chunk
      * <p>
@@ -30,6 +22,16 @@ public class AudioConfig {
      * 4KB: 1s : x = 88200 : 1024 -> x = 1 * 2048 / 88200 = 0.0232 -> 22 chunks al secondo
      */
     public static int CHUNK_SIZE = 256;
+
+    public static final int LOWER_LIMIT = 10;
+    public static final int UPPER_LIMIT = 44100;
+    public static final int[] RANGE = new int[]{40, 80, 120, 180, UPPER_LIMIT + 1};
+    /**
+     * Record duration in ms (it must be consistent with the duration of the audio recorder in the python script)
+     */
+    public static final long RECORD_DURATION = 25000;
+
+
 
 
     public static AudioFormat getDefaultFormat() {

@@ -73,7 +73,7 @@ public class AudioSignal {
     public String toString() {
         return "AudioSignal{" +
                 "name='" + name + '\'' +
-                " [ " + getAudioDuration() + " seconds ] " +
+                " ( tot duration: " + getAudioDuration() + " seconds ) " +
                 ", format=" + format +
                 '}';
     }
