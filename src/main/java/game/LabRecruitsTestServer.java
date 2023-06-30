@@ -124,7 +124,7 @@ public class LabRecruitsTestServer {
             try {
                 System.out.println("Closing Python audio recorder ...");
                 long recordtime = recorderStopWatch.getTime();
-                Thread.sleep(AudioConfig.RECORD_DURATION - recordtime + 2000);
+                Thread.sleep(Math.max(AudioConfig.RECORD_DURATION - recordtime + 2000, 0));
 
                 audioRecorder.waitFor(15, TimeUnit.SECONDS);
                 audioRecorder.destroy();

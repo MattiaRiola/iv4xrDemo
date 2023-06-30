@@ -96,8 +96,8 @@ public class AudioAnalysis {
 
     /**
      * @param matches        match map for that audio
-     * @param time           interested time when the best match is requested
-     * @param timeWindowSize the size of time window analysed (time must be between time-timeWindowSize and time+timeWindowSize)
+     * @param time           interested time when the best match is requested (in seconds)
+     * @param timeWindowSize the size of time window analysed (in seconds) (time must be between time-timeWindowSize and time+timeWindowSize)
      * @return the audio with higher match rate in that time window
      */
     public static String getBestMatchAtTime(Set<AudioMatch> matches, double time, double timeWindowSize) {

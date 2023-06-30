@@ -21,7 +21,7 @@ public class AudioConfig {
      * 2KB: 1s : x = 88200 : 1024 -> x = 1 * 2048 / 88200 = 0.0232 -> 43 chunks al secondo
      * 4KB: 1s : x = 88200 : 1024 -> x = 1 * 2048 / 88200 = 0.0232 -> 22 chunks al secondo
      */
-    public static int CHUNK_SIZE = 256;
+    public static int CHUNK_SIZE = 512;
 
     public static final int LOWER_LIMIT = 10;
     public static final int UPPER_LIMIT = 44100;

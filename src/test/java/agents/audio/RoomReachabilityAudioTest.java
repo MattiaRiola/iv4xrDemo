@@ -8,6 +8,7 @@ at Utrecht University within the Software and Game project course.
 package agents.audio;
 
 
+import agents.EventsProducer;
 import agents.LabRecruitsTestAgent;
 import agents.TestSettings;
 import agents.tactics.GoalLib;
@@ -27,16 +28,15 @@ import world.BeliefState;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static agents.TestSettings.ENABLE_VERBOSE_LOGGING;
 import static agents.TestSettings.USE_INSTRUMENT;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static utils.FileExplorer.DIR_GAME_RECORDS;
 
 /**
@@ -58,26 +58,35 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 	@Test
 	public void gameplayAudioTestDingAndFiresizzleTest() throws InterruptedException {
 
-		var buttonToTest = "button1";
-		var doorToTest = "door1";
 		LabRecruitsEnvironment environment = null;
 		try {
 			//when
-			if (!SKIP_GAMEPLAY) {// Create an environment
-				environment = createLevelEnvironment();
-				playLevel(environment);
-				labRecruitsTestServer.closeAudioRecorder();
-			}
+			environment = createLevelEnvironment();
+			Map<Double, String> expectedSounds = playLevel(environment);
+			labRecruitsTestServer.closeAudioRecorder();
 
 			Set<AudioMatch> matches = getMatchesFromGameRecords();
 
 			//then
 			List<String> soundsFound = getSoundsFound(matches);
 			Assertions.assertFalse(soundsFound.isEmpty(), "No matches found in the game records");
-			Assertions.assertTrue(soundsFound.contains("ding1.wav"), "ding1.wav not found in the game records, found: " + soundsFound);
-			Assertions.assertTrue(soundsFound.contains("ding1.wav"), "firesizzle.wav not found in the game records, found: " + soundsFound);
+			Assertions.assertTrue(soundsFound.contains(DING_1_WAV), DING_1_WAV + " not found in the game records, found: " + soundsFound);
+			Assertions.assertTrue(soundsFound.contains(FIRESIZZLE_WAV), FIRESIZZLE_WAV + " not found in the game records, found: " + soundsFound);
 
-			fail("TODO: check if the sounds are played in the right time window");
+
+			Assertions.assertFalse(expectedSounds.isEmpty());
+			System.out.println(expectedSounds);
+			expectedSounds.forEach(
+					(time, type) -> {
+						var relatedAudio = readAudios.stream().filter(audioSignal -> audioSignal.getName().equals(type)).findAny();
+						if (relatedAudio.isPresent()) {
+							double audioDuration = relatedAudio.get().getAudioDuration();
+							String match = AudioAnalysis.getBestMatchAtTime(matches, time, audioDuration);
+							Assertions.assertNotNull(match, "no match found in this time window " + (time - audioDuration) + " - " + (time + audioDuration));
+							Assertions.assertEquals(match, type, "match found but not the expected one, stat:\n" + AudioAnalysis.getMatchStat(AudioAnalysis.getMatchesAtTime(matches, time, audioDuration)));
+						}
+					}
+			);
 		} catch (IOException | UnsupportedAudioFileException e) {
 			System.err.println("Error: " + e.getMessage());
 		} finally {
@@ -95,14 +104,19 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		return environment;
 	}
 
-	private static void playLevel(LabRecruitsEnvironment environment) throws IOException, InterruptedException {
+	private static Map<Double, String> playLevel(LabRecruitsEnvironment environment) throws IOException, InterruptedException {
 		TestSettings.youCanRepositionWindow();
 		labRecruitsTestServer.startRecording(5, 4);
 
 		// create a test agent
 		var testAgent = new LabRecruitsTestAgent("agent1") // matches the ID in the CSV file
 				.attachState(new BeliefState())
-				.attachEnvironment(environment);
+				.attachEnvironment(environment)
+				.setTestDataCollector(new TestDataCollector())
+				.attachSyntheticEventsProducer(new EventsProducer());
+
+		//init states
+		Map<Double, String> expectedSounds = new HashMap<>();
 
 		// define the testing-task:
 		var testingTask = SEQ(
@@ -143,7 +157,6 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		environment.startSimulation(); // this will press the "Play" button in the game for you
 		//goal not achieved yet
 		assertFalse(testAgent.success());
-
 		int i = 0;
 		// keep updating the agent
 		while (testingTask.getStatus().inProgress()) {
@@ -152,6 +165,13 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 			Thread.sleep(50);
 			i++;
 			testAgent.update();
+			List<WorldEntity> changes = testAgent.state().changedEntities;
+			if (changes.size() > 0) {
+				for (WorldEntity change : changes) {
+					System.out.println("_____Change: " + change);
+					addExpectedSound(expectedSounds, change);
+				}
+			}
 			if (i > 200) {
 				break;
 			}
@@ -164,7 +184,22 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		assertTrue(testAgent.success());
 		// close
 		testAgent.printStatus();
+		return expectedSounds;
 	}
+
+
+	private static void updateStatesFromWorld(LabRecruitsTestAgent testAgent, Map<String, Set<WorldEntity>> objectStates) {
+		var state = testAgent.state();
+		//Map<String, Set<AudioEvent>> events = new TreeMap<>();
+		for (var e : state.worldmodel.elements.values()) {
+			var entityStates = objectStates.getOrDefault(e.id,
+					new TreeSet<>(Comparator.comparing(o -> o.timestamp))
+			);
+			entityStates.add(e);
+			objectStates.put(e.id, entityStates);
+		}
+	}
+
 
 	private static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
 

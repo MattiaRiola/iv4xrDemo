@@ -43,6 +43,7 @@ import static utils.FileExplorer.DIR_GAME_RECORDS;
 public class MonsterAudioTest extends AudioAbstractTest {
 
 
+
 	/**
 	 * A test to verify that the east closet is reachable.
 	 */
@@ -64,7 +65,7 @@ public class MonsterAudioTest extends AudioAbstractTest {
 
 			//then
 			Assertions.assertFalse(matches.isEmpty(), "No matches found in the game records");
-			Assertions.assertTrue(AudioAnalysis.getMatchWithScores(matches).containsKey("monsterattack.wav"), "monsterattack.wav not found in the game records");
+			Assertions.assertTrue(AudioAnalysis.getMatchWithScores(matches).containsKey(MONSTERATTACK_WAV), MONSTERATTACK_WAV + " not found in the game records");
 
 			fail("TODO: check the presence of monster sounds when the player is attacked");
 		} catch (IOException | UnsupportedAudioFileException e) {
