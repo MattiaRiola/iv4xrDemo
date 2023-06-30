@@ -12,27 +12,22 @@ import agents.LabRecruitsTestAgent;
 import agents.TestSettings;
 import agents.tactics.GoalLib;
 import entity.audio.AudioMatch;
-import entity.audio.AudioSignal;
 import environments.LabRecruitsConfig;
 import environments.LabRecruitsEnvironment;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import service.audio.AudioAnalysis;
-import utils.FileExplorer;
-import world.BeliefState;
 import world.LabEntity;
 import world.LabWorldModel;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
 import static nl.uu.cs.aplib.AplibEDSL.SUCCESS;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static utils.FileExplorer.DIR_GAME_RECORDS;
 
 /**
  * A simple test to demonstrate using iv4xr agents to test the Lab Recruits game.
@@ -55,24 +50,20 @@ public class MonsterAudioTest extends AudioAbstractTest {
 		LabRecruitsEnvironment environment = null;
 		try {
 			//when
-			if (!SKIP_GAMEPLAY) {// Create an environment
-				environment = createLevelEnvironment();
-				playLevel(environment);
-				labRecruitsTestServer.closeAudioRecorder();
-			}
+			environment = createLevelEnvironment();
+			Map<Double, String> expectedSound = playLevel(environment);
+			labRecruitsTestServer.closeAudioRecorder();
 
 			Set<AudioMatch> matches = getMatchesFromGameRecords();
 
 			//then
 			Assertions.assertFalse(matches.isEmpty(), "No matches found in the game records");
 			Assertions.assertTrue(AudioAnalysis.getMatchWithScores(matches).containsKey(MONSTERATTACK_WAV), MONSTERATTACK_WAV + " not found in the game records");
-
-			fail("TODO: check the presence of monster sounds when the player is attacked");
+			checkExpectedSounds(expectedSound, matches);
 		} catch (IOException | UnsupportedAudioFileException e) {
 			System.err.println("Error: " + e.getMessage());
 		} finally {
-			if (!SKIP_GAMEPLAY)
-				environment.close();
+			environment.close();
 		}
 
 	}
@@ -86,43 +77,33 @@ public class MonsterAudioTest extends AudioAbstractTest {
 		return environment;
 	}
 
-	private static void playLevel(LabRecruitsEnvironment environment) throws IOException, InterruptedException {
+	private static Map<Double, String> playLevel(LabRecruitsEnvironment environment) throws IOException, InterruptedException {
 		TestSettings.youCanRepositionWindow();
-		labRecruitsTestServer.startRecording(5, 4);
+		labRecruitsTestServer.startRecording(1, 25);
 
 		// create a test agent
 
-		LabRecruitsTestAgent agent = new LabRecruitsTestAgent("agent0")
-				.attachState(new BeliefState())
-				.attachEnvironment(environment);
+		LabRecruitsTestAgent agent = createAgentWithEventProducer(environment, "agent0");
 
 		// press play in Unity
 		if (!environment.startSimulation())
 			throw new InterruptedException("Unity refuses to start the Simulation!");
 
 
-		var g = SEQ(GoalLib.atBGF("Finish", 1.5f, true),
+		var testingGoal = SEQ(GoalLib.atBGF("Finish", 1.5f, true),
 				SUCCESS(),
 				SUCCESS(),
 				SUCCESS());
 
-		agent.setGoal(g);
+		agent.setGoal(testingGoal);
 
 
-		int i = 0;
 		agent.update();
 		assertTrue(((LabWorldModel) agent.state().worldmodel).gameover == false);
-		i = 1;
+
 		System.out.println(">>>> " + ((LabWorldModel) agent.state().worldmodel).gameover);
 
-		while (g.getStatus().inProgress()) {
-			agent.update();
-			i++;
-			System.out.println("*** " + i + ", " + agent.state().id + " @" + agent.state().worldmodel.position);
-			System.out.println(">>>> " + ((LabWorldModel) agent.state().worldmodel).gameover);
-			Thread.sleep(30);
-			if (i >= 150) break;
-		}
+		Map<Double, String> expectedSounds = progressTheAgentAndExtractExpectedSounds(environment, agent, testingGoal, 200);
 
 		//assertTrue(((LabWorldModel) agent.state().worldmodel).gameover == true)  ;
 
@@ -143,18 +124,6 @@ public class MonsterAudioTest extends AudioAbstractTest {
 		if (!environment.close())
 			throw new InterruptedException("Unity refuses to close the Simulation!");
 
-	}
-
-	private static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
-
-		List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
-		Assertions.assertEquals(1, gameRecords.size(), "only one record is analysed");
-		AudioSignal gameRecord = gameRecords.get(0);
-
-		System.out.println("Analysing: " + gameRecord.getName());
-		var matches = AudioAnalysis.searchMatch(gameRecord);
-		Assertions.assertNotEquals(matches.size(), gameRecords.size());
-
-		return matches;
+		return expectedSounds;
 	}
 }

@@ -1,29 +1,32 @@
 package agents.audio;
 
+import agents.EventsProducer;
 import agents.LabRecruitsTestAgent;
 import agents.TestSettings;
 import config.audio.AudioConfig;
 import entity.audio.AudioMatch;
 import entity.audio.AudioSignal;
 import environments.LabRecruitsEnvironment;
+import eu.iv4xr.framework.mainConcepts.TestDataCollector;
 import eu.iv4xr.framework.mainConcepts.WorldEntity;
 import game.LabRecruitsTestServer;
 import nl.uu.cs.aplib.mainConcepts.GoalStructure;
 import org.apache.commons.lang3.time.StopWatch;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import service.audio.AudioAnalysis;
 import utils.FileExplorer;
+import world.BeliefState;
 import world.LabEntity;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static agents.TestSettings.ENABLE_VERBOSE_LOGGING;
-import static agents.TestSettings.USE_AUDIO_TESTING;
+import static agents.TestSettings.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static utils.FileExplorer.*;
 
 public abstract class AudioAbstractTest {
@@ -58,12 +61,11 @@ public abstract class AudioAbstractTest {
         List<AudioSignal> gameSounds = FileExplorer.readAllSoundsInFolder(DIR_GAME_SOUNDS);
         readAudios.addAll(gameSounds);
         AudioAnalysis.loadAudioFingerprint(gameSounds);
+        USE_GRAPHICS = true;
+        String labRecruitesExeRootDir = System.getProperty("user.dir");
+        labRecruitsTestServer = TestSettings.start_LabRecruitsTestServerWithAudio(labRecruitesExeRootDir, 10);
+        soundStopWatch.start();
 
-        if (!SKIP_GAMEPLAY) {
-            String labRecruitesExeRootDir = System.getProperty("user.dir");
-            labRecruitsTestServer = TestSettings.start_LabRecruitsTestServerWithAudio(labRecruitesExeRootDir, 10);
-            soundStopWatch.start();
-        }
 
     }
 
@@ -77,6 +79,14 @@ public abstract class AudioAbstractTest {
             FileExplorer.deleteFilesInFolder(DIR_GAME_RECORDS);
     }
 
+    static LabRecruitsTestAgent createAgentWithEventProducer(LabRecruitsEnvironment environment, String agentId) {
+        return new LabRecruitsTestAgent(agentId) // matches the ID in the CSV file
+                .attachState(new BeliefState())
+                .attachEnvironment(environment)
+                .setTestDataCollector(new TestDataCollector())
+                .attachSyntheticEventsProducer(new EventsProducer());
+    }
+
     /**
      * makes the agent progress through the environment and check if the expected sounds are played
      *
@@ -86,10 +96,10 @@ public abstract class AudioAbstractTest {
      * @return the expected sounds and the time they were played
      * @throws InterruptedException
      */
-    static Map<Double, String> progressTheAgentAndExtractExpectedSounds(LabRecruitsEnvironment environment, LabRecruitsTestAgent testAgent, GoalStructure testingTask) throws InterruptedException {
+    static Map<Double, String> progressTheAgentAndExtractExpectedSounds(LabRecruitsEnvironment environment, LabRecruitsTestAgent testAgent, GoalStructure testingTask, int maxTicks) throws InterruptedException {
         int i = 0;
         int previousHp = 100;
-        Map<Double, String> expectedSounds = new TreeMap<>(Comparator.reverseOrder());
+        Map<Double, String> expectedSounds = new TreeMap<>();
         while (testingTask.getStatus().inProgress()) {
             if (ENABLE_VERBOSE_LOGGING)
                 System.out.println("*** " + i + ", " + testAgent.state().id + " @" + testAgent.state().worldmodel.position);
@@ -98,7 +108,19 @@ public abstract class AudioAbstractTest {
             testAgent.update();
             List<WorldEntity> changes = testAgent.state().changedEntities;
             if (environment.obs.agent.health < previousHp) {
-                addExpectedDamageRelatedSound(expectedSounds, LabEntity.FIREHAZARD);
+                var objects = environment.obs.objects;
+                long numOfEnemies = Arrays.stream(objects).filter(go -> go.tag.equals(LabEntity.ENEMY)).count();
+                long numOfFires = Arrays.stream(objects).filter(go -> go.tag.equals(LabEntity.FIREHAZARD)).count();
+                long numOfDynamics = Arrays.stream(objects).filter(go -> go.tag.equals(LabEntity.DYNAMIC)).count();
+
+                if (numOfFires + numOfDynamics > 0 && numOfEnemies == 0)
+                    addExpectedDamageRelatedSound(expectedSounds, LabEntity.FIREHAZARD);
+                if (numOfEnemies > 0 && numOfFires == 0)
+                    addExpectedDamageRelatedSound(expectedSounds, LabEntity.ENEMY);
+                if (numOfFires > 0 && numOfEnemies > 0) {
+                    addExpectedDamageRelatedSound(expectedSounds, LabEntity.FIREHAZARD);
+                    addExpectedDamageRelatedSound(expectedSounds, LabEntity.ENEMY);
+                }
                 previousHp = environment.obs.agent.health;
             }
             if (changes.size() > 0) {
@@ -114,12 +136,12 @@ public abstract class AudioAbstractTest {
         return expectedSounds;
     }
 
-    static void addExpectedDamageRelatedSound(Map<Double, String> expectedSounds, String changeEntity) {
+    private static void addExpectedDamageRelatedSound(Map<Double, String> expectedSounds, String changeEntity) {
+        soundStopWatch.split();
         double stopWatchTime = (soundStopWatch.getSplitTime() / 1000d);
         switch (changeEntity) {
             case LabEntity.ENEMY:
-                System.out.println("enemy here not fire!");
-                expectedSounds.put(stopWatchTime, fromEntityTypeToSoundName(LabEntity.FIREHAZARD));
+                expectedSounds.put(stopWatchTime, fromEntityTypeToSoundName(LabEntity.ENEMY));
                 break;
             case LabEntity.FIREHAZARD:
                 expectedSounds.put(stopWatchTime, fromEntityTypeToSoundName(LabEntity.FIREHAZARD));
@@ -128,7 +150,7 @@ public abstract class AudioAbstractTest {
     }
 
 
-    static void addExpectedSound(Map<Double, String> expectedSounds, WorldEntity change) {
+    private static void addExpectedSound(Map<Double, String> expectedSounds, WorldEntity change) {
 
         double audioDuration = 1d;
         soundStopWatch.split();
@@ -148,8 +170,21 @@ public abstract class AudioAbstractTest {
 
     }
 
+    static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
+
+        List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
+        assertEquals(1, gameRecords.size(), "only one record is analysed");
+        AudioSignal gameRecord = gameRecords.get(0);
+
+        System.out.println("Analysing: " + gameRecord.getName());
+
+        return AudioAnalysis.searchMatch(gameRecord);
+    }
+
     static void checkExpectedSounds(Map<Double, String> expectedSounds, Set<AudioMatch> matches) {
         System.out.println("checking expected sounds");
+
+
         expectedSounds.forEach(
                 (time, type) -> {
                     var relatedAudio = readAudios.stream().filter(audioSignal -> audioSignal.getName().equals(type)).findAny();
@@ -158,11 +193,51 @@ public abstract class AudioAbstractTest {
                         audioDuration = DEFAULT_TIME_WINDOW_SIZE;
                         System.out.print("sound " + type + " at " + time);
                         String match = AudioAnalysis.getBestMatchAtTime(matches, time, audioDuration);
-                        Assertions.assertNotNull(match, "no match found in this time window " + (time - audioDuration) + " - " + (time + audioDuration));
-                        Assertions.assertEquals(type, match,
+                        assertNotNull(match, "no match found in this time window " + (time - audioDuration) + " - " + (time + audioDuration));
+                        assertEquals(type, match,
                                 (time - audioDuration) + " - " + (time + audioDuration) +
                                         " match found but not the expected one, stat:\n"
-                                        + AudioAnalysis.getMatchStat(AudioAnalysis.getMatchesAtTime(matches, time, audioDuration)));
+                                        + AudioAnalysis.getMatchStat(AudioAnalysis.getMatchesAtTime(matches, time, audioDuration))
+
+                        );
+                        System.out.println(ANSI_GREEN + " -> OK" + ANSI_RESET);
+                    }
+                }
+        );
+    }
+
+    /**
+     * the matches will be checked if the sound is present in the top maxNumberOfOverlaps sounds (from the highest match count to the lowest)
+     *
+     * @param expectedSounds
+     * @param matches
+     * @param maxNumberOfOverlaps
+     */
+    static void checkExpectedOverlappedSounds(Map<Double, String> expectedSounds, Set<AudioMatch> matches, int maxNumberOfOverlaps) {
+        System.out.println("checking expected sounds");
+
+
+        expectedSounds.forEach(
+                (time, type) -> {
+                    var relatedAudio = readAudios.stream().filter(audioSignal -> audioSignal.getName().equals(type)).findAny();
+                    if (relatedAudio.isPresent()) {
+                        double audioDuration = relatedAudio.get().getAudioDuration();
+                        audioDuration = DEFAULT_TIME_WINDOW_SIZE;
+                        System.out.print("sound " + type + " at " + time);
+                        String match = AudioAnalysis.getBestMatchAtTime(matches, time, audioDuration);
+                        assertNotNull(match, "no match found in this time window " + (time - audioDuration) + " - " + (time + audioDuration));
+                        var matchesInTimeWindow = AudioAnalysis.getMatchesAtTime(matches, time, audioDuration);
+
+                        Map<String, Integer> topMatches = AudioAnalysis.getMatchStat(matchesInTimeWindow).entrySet().stream()
+                                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                                .limit(maxNumberOfOverlaps)
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                        assertTrue(topMatches.containsKey(type),
+                                (time - audioDuration) + " - " + (time + audioDuration) +
+                                        " match found but not the expected one, stat:\n"
+                                        + AudioAnalysis.getMatchStat(matchesInTimeWindow)
+
+                        );
                         System.out.println(ANSI_GREEN + " -> OK" + ANSI_RESET);
                     }
                 }

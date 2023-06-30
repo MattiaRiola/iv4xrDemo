@@ -8,12 +8,10 @@ at Utrecht University within the Software and Game project course.
 package agents.audio;
 
 
-import agents.EventsProducer;
 import agents.LabRecruitsTestAgent;
 import agents.TestSettings;
 import agents.tactics.GoalLib;
 import entity.audio.AudioMatch;
-import entity.audio.AudioSignal;
 import environments.LabRecruitsConfig;
 import environments.LabRecruitsEnvironment;
 import eu.iv4xr.framework.mainConcepts.TestDataCollector;
@@ -22,9 +20,6 @@ import logger.JsonLoggerInstrument;
 import nl.uu.cs.aplib.mainConcepts.Environment;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import service.audio.AudioAnalysis;
-import utils.FileExplorer;
-import world.BeliefState;
 
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.IOException;
@@ -36,7 +31,6 @@ import static agents.TestSettings.USE_INSTRUMENT;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static utils.FileExplorer.DIR_GAME_RECORDS;
 
 /**
  * A simple test to demonstrate using iv4xr agents to test the Lab Recruits game.
@@ -79,8 +73,7 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		} catch (IOException | UnsupportedAudioFileException e) {
 			System.err.println("Error: " + e.getMessage());
 		} finally {
-			if (!SKIP_GAMEPLAY)
-				environment.close();
+			environment.close();
 		}
 
 	}
@@ -148,7 +141,7 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		// keep updating the agent
 		var previousHp = 100;
 		Map<Double, String> expectedSounds =
-				progressTheAgentAndExtractExpectedSounds(environment, testAgent, testingTask);
+				progressTheAgentAndExtractExpectedSounds(environment, testAgent, testingTask, 200);
 		testingTask.printGoalStructureStatus();
 
 		// check that we have passed both tests above:
@@ -158,15 +151,6 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		// close
 		testAgent.printStatus();
 		return expectedSounds;
-	}
-
-
-	private static LabRecruitsTestAgent createAgentWithEventProducer(LabRecruitsEnvironment environment, String agentId) {
-		return new LabRecruitsTestAgent(agentId) // matches the ID in the CSV file
-				.attachState(new BeliefState())
-				.attachEnvironment(environment)
-				.setTestDataCollector(new TestDataCollector())
-				.attachSyntheticEventsProducer(new EventsProducer());
 	}
 
 
@@ -183,16 +167,7 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 	}
 
 
-	private static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
 
-		List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
-		Assertions.assertEquals(1, gameRecords.size(), "too many records in the folder, only one record is analysed");
-		AudioSignal gameRecord = gameRecords.get(0);
-
-		System.out.println("Analysing: " + gameRecord.getName());
-
-		return AudioAnalysis.searchMatch(gameRecord);
-	}
 
 	/**
 	 * @param matches

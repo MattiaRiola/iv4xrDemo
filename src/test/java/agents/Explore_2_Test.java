@@ -1,27 +1,18 @@
 package agents;
 
-import agents.tactics.*;
+import agents.tactics.GoalLib;
 import environments.LabRecruitsConfig;
 import environments.LabRecruitsEnvironment;
-import eu.iv4xr.framework.mainConcepts.TestAgent;
-import game.LabRecruitsTestServer;
-import game.Platform;
 import eu.iv4xr.framework.spatial.Vec3;
-import logger.JsonLoggerInstrument;
-import nl.uu.cs.aplib.Logging;
-import nl.uu.cs.aplib.mainConcepts.*;
+import game.LabRecruitsTestServer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import world.BeliefState;
 import world.LabEntity;
 
-import static agents.TestSettings.*;
-import static nl.uu.cs.aplib.AplibEDSL.*;
-import static org.junit.jupiter.api.Assertions.* ;
-
-import java.util.Scanner;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import static agents.TestSettings.USE_SERVER_FOR_TEST;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test that the agent can explore its way to find an entity (a button). 
@@ -69,7 +60,7 @@ public class Explore_2_Test {
 
     	if(TestSettings.USE_GRAPHICS) {
     		System.out.println("You can drag then game window elsewhere for beter viewing. Then hit RETURN to continue.") ;
-    		new Scanner(System.in) . nextLine() ;
+    		//new Scanner(System.in) . nextLine() ;
     	}
     	
         // press play in Unity

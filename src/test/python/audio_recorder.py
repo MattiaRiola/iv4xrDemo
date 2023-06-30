@@ -20,6 +20,7 @@ filename = f"./src/test/resources/audio/game/records/output_record.wav"
 
 
 def signal_handler(sig, frame):
+    print('/!\\ INTERRUPTION HANDLER')
     # This function will be called when the script is being terminated
     global p, stream, frames, channels, sample_format, fs, filename
     # This function will be called when the script is being terminated
@@ -32,7 +33,7 @@ def signal_handler(sig, frame):
     if p is not None:
         p.terminate()
 
-    print('Finished recording')
+    print('####PYTHON: Finished recording')
 
     # Save the recorded data as a WAV file
     if frames:
@@ -74,7 +75,7 @@ def argReader(argv):
     return recordSize, numRecords
 
 
-recordSize, numRecords = 25, 1
+recordSize, numRecords = 60, 1
 # if __name__ == "__main__":
 #    recordSize, numRecords = argReader(sys.argv[1:])
 
@@ -92,11 +93,12 @@ if input_device_index is None:
 
 p = pyaudio.PyAudio()  # Create an interface to PortAudio
 
+print("######################################################")
 print('Recording ',
-      #    numRecords,
-      #   ' long ',
-      #   recordSize,
-      #   ' seconds'
+      numRecords,
+      ' long ',
+      recordSize,
+      ' seconds'
       '...')
 
 stream = p.open(format=sample_format,
@@ -120,7 +122,8 @@ def close_and_save_record():
     stream.close()
     # Terminate the PortAudio interface
     p.terminate()
-    print('Finished recording')
+    print('###PYTHON Finished recording')
+    print('######################################################')
     print('Saving file ', filename, ' ... ')
     # Save the recorded data as a WAV file
     wf = wave.open(filename, 'wb')

@@ -60,10 +60,12 @@ public class LabRecruitsTestServer {
         pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         audioRecorder = pb.start();
-        System.out.println("Python audio recorder started");
+        if (audioRecorder.isAlive())
+            System.out.println("Python audio recorder started");
         recorderStopWatch = new StopWatch();
         recorderStopWatch.reset();
         recorderStopWatch.start();
+        audioRecorder.getOutputStream().flush();
 
     }
 
@@ -114,19 +116,23 @@ public class LabRecruitsTestServer {
                 server.destroy();
                 server.waitFor();
                 closeAudioRecorder();
-            } catch (InterruptedException e) {
+            } catch (InterruptedException | IOException e) {
                 e.printStackTrace();
             }
         }
     }
-    public void closeAudioRecorder(){
+
+    public void closeAudioRecorder() throws IOException {
         if (audioRecorder != null && !audioRecorder.isAlive()) {
             try {
                 System.out.println("Closing Python audio recorder ...");
                 long recordtime = recorderStopWatch.getTime();
-                Thread.sleep(Math.max(AudioConfig.RECORD_DURATION - recordtime + 2000, 0));
+                System.out.println("waiting for end of the record : waiting " + (AudioConfig.RECORD_DURATION - recordtime + 2_000) + " ms");
+                audioRecorder.getOutputStream().flush();
+                Thread.sleep(Math.max(AudioConfig.RECORD_DURATION - recordtime + 2_000, 0));
 
-                audioRecorder.waitFor(15, TimeUnit.SECONDS);
+                audioRecorder.waitFor(60, TimeUnit.SECONDS);
+                audioRecorder.getOutputStream().flush();
                 audioRecorder.destroy();
                 audioRecorder.waitFor();
                 audioRecorder = null;
@@ -134,6 +140,11 @@ public class LabRecruitsTestServer {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        } else {
+            if (audioRecorder != null) {
+                audioRecorder.getOutputStream().flush();
+            }
+            System.err.println("THERE IS NO RECORDER TO CLOSE");
         }
     }
 

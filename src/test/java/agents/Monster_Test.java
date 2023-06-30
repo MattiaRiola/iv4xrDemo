@@ -7,28 +7,24 @@ at Utrecht University within the Software and Game project course.
 
 package agents;
 
-import static agents.TestSettings.USE_INSTRUMENT;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.util.Scanner;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-
 import agents.tactics.GoalLib;
 import environments.LabRecruitsConfig;
 import environments.LabRecruitsEnvironment;
 import environments.SocketReaderWriter;
-import eu.iv4xr.framework.mainConcepts.TestDataCollector;
-import game.LabRecruitsTestServer;
-import eu.iv4xr.framework.spatial.Obstacle;
 import eu.iv4xr.framework.spatial.Vec3;
-import nl.uu.cs.aplib.mainConcepts.BasicAgent;
-import static nl.uu.cs.aplib.AplibEDSL.* ;
+import game.LabRecruitsTestServer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import world.BeliefState;
 import world.LabEntity;
 import world.LabWorldModel;
+
+import java.util.Scanner;
+
+import static nl.uu.cs.aplib.AplibEDSL.SEQ;
+import static nl.uu.cs.aplib.AplibEDSL.SUCCESS;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // Creates an agent that walks a preset route.
 
@@ -154,28 +150,28 @@ class Monster_Test {
     
     @Test
     void testNavigatingAroundMonster() throws InterruptedException {
-    	
-    	var config = new LabRecruitsConfig("simple_withEnemies") ;   	
+
+        var config = new LabRecruitsConfig("simple_withEnemies");
         var environment = new LabRecruitsEnvironment(config);
 
         LabRecruitsTestAgent agent = new LabRecruitsTestAgent("agent0")
-        		                     . attachState(new BeliefState())
-        		                     . attachEnvironment(environment) ;
+                .attachState(new BeliefState())
+                .attachEnvironment(environment);
 
-        if(TestSettings.USE_GRAPHICS) {
-    		System.out.println("You can drag then game window elsewhere for beter viewing. Then hit RETURN to continue.") ;
-    		new Scanner(System.in) . nextLine() ;
-    	}
-        
-        var g = GoalLib.entityInteracted("button0") ;
-        
-        agent.setGoal(g) ;
-        
+//        if(TestSettings.USE_GRAPHICS) {
+//    		System.out.println("You can drag then game window elsewhere for beter viewing. Then hit RETURN to continue.") ;
+//    		new Scanner(System.in) . nextLine() ;
+//    	}
 
-        int i = 0 ;
+        var g = GoalLib.entityInteracted("button0");
+
+        agent.setGoal(g);
+
+
+        int i = 0;
         agent.update();
-        i = 1 ;
-        var wom = (LabWorldModel) agent.state().worldmodel ;
+        i = 1;
+        var wom = (LabWorldModel) agent.state().worldmodel;
         var orc1 = wom.getElement("orc1") ;
         System.out.println(">>> orc1 = " + orc1) ;
         

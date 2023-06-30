@@ -29,7 +29,7 @@ public class AudioConfig {
     /**
      * Record duration in ms (it must be consistent with the duration of the audio recorder in the python script)
      */
-    public static final long RECORD_DURATION = 25000;
+    public static final long RECORD_DURATION = 60_000;
 
 
 

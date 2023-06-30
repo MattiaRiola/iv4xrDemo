@@ -1,38 +1,37 @@
 package world;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.HashSet;
-
-import environments.LabRecruitsEnvironment;
 import eu.iv4xr.framework.mainConcepts.WorldEntity;
-import eu.iv4xr.framework.mainConcepts.WorldModel;
 import eu.iv4xr.framework.spatial.Box;
 import eu.iv4xr.framework.spatial.Line;
 import eu.iv4xr.framework.spatial.LineIntersectable;
 import eu.iv4xr.framework.spatial.Vec3;
-import nl.uu.cs.aplib.mainConcepts.Environment;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashSet;
 
 public class LabEntity extends WorldEntity implements LineIntersectable, Serializable{
 	
 	private static final long serialVersionUID = 1L;
-	
+
 	// entity types
-	public static final String DOOR = "Door" ;
-	public static final String GOAL = "Goal" ;
-	public static final String COLORSCREEN = "ColorScreen" ;
-	public static final String FIREHAZARD = "FireHazard" ;
-	public static final String SWITCH = "Switch" ;
-	public static final String NPC = "NPC" ;
-	public static final String ENEMY = "Enemy" ;
-	public static final String PLAYER = "Player" ;
-	
-	
+	public static final String DOOR = "Door";
+	public static final String GOAL = "Goal";
+	public static final String COLORSCREEN = "ColorScreen";
+	public static final String FIREHAZARD = "FireHazard";
+	public static final String SWITCH = "Switch";
+	public static final String NPC = "NPC";
+	public static final String ENEMY = "Enemy";
+	public static final String PLAYER = "Player";
+
+	public static final String DYNAMIC = "Dynamic";
+
+
 	public LabEntity(String id, String type, boolean dynamic) {
-		super(id,type,dynamic) ;
+		super(id, type, dynamic);
 	}
-	
-	/** 
+
+	/**
 	 * Return the center position of the entity, with the y-position shifted to the floor level.
 	 */
 	public Vec3 getFloorPosition() {
