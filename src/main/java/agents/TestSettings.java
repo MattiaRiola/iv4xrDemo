@@ -2,7 +2,6 @@ package agents;
 
 import game.LabRecruitsTestServer;
 import game.Platform;
-import org.apache.commons.lang3.time.StopWatch;
 
 /**
  * This class provides a utility method to launch a Lab Recruits game from
@@ -49,7 +48,6 @@ public class TestSettings {
 	 */
 	public static boolean USE_AUDIO_TESTING = true;
 
-	public static double delayBetweenRecorderAndGame = 0d;
 
 	/**
 	 * If USE_SERVER_FOR_TEST is set to true, this will launch a fresh instance of the
@@ -80,22 +78,19 @@ public class TestSettings {
 	 */
 	public static LabRecruitsTestServer start_LabRecruitsTestServerWithAudio(String labRecruitesExeRootDir, Integer chunkLenght) {
 		LabRecruitsTestServer labRecruitsTestServer = null;
-		StopWatch delayStopWatch = new StopWatch();
 		if(USE_SERVER_FOR_TEST){
 			if(USE_AUDIO_TESTING) {
 				labRecruitsTestServer = new LabRecruitsTestServer(
 						USE_GRAPHICS,
 						chunkLenght,
 						Platform.PathToLabRecruitsExecutable(labRecruitesExeRootDir));
-				delayStopWatch.reset();
-				delayStopWatch.start();
+
 			} else{
 				labRecruitsTestServer = new LabRecruitsTestServer(
 						USE_GRAPHICS,
 						Platform.PathToLabRecruitsExecutable(labRecruitesExeRootDir));
 			}
 			labRecruitsTestServer.waitForGameToLoad();
-			delayBetweenRecorderAndGame = delayStopWatch.getTime()/1000d;
 		}
 		return labRecruitsTestServer ;
 	}

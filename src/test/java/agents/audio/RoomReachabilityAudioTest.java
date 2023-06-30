@@ -32,7 +32,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static agents.TestSettings.ENABLE_VERBOSE_LOGGING;
 import static agents.TestSettings.USE_INSTRUMENT;
 import static nl.uu.cs.aplib.AplibEDSL.SEQ;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -75,18 +74,8 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 
 
 			Assertions.assertFalse(expectedSounds.isEmpty());
-			System.out.println(expectedSounds);
-			expectedSounds.forEach(
-					(time, type) -> {
-						var relatedAudio = readAudios.stream().filter(audioSignal -> audioSignal.getName().equals(type)).findAny();
-						if (relatedAudio.isPresent()) {
-							double audioDuration = relatedAudio.get().getAudioDuration();
-							String match = AudioAnalysis.getBestMatchAtTime(matches, time, audioDuration);
-							Assertions.assertNotNull(match, "no match found in this time window " + (time - audioDuration) + " - " + (time + audioDuration));
-							Assertions.assertEquals(match, type, "match found but not the expected one, stat:\n" + AudioAnalysis.getMatchStat(AudioAnalysis.getMatchesAtTime(matches, time, audioDuration)));
-						}
-					}
-			);
+
+			checkExpectedSounds(expectedSounds, matches);
 		} catch (IOException | UnsupportedAudioFileException e) {
 			System.err.println("Error: " + e.getMessage());
 		} finally {
@@ -95,6 +84,7 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		}
 
 	}
+
 
 	private LabRecruitsEnvironment createLevelEnvironment() {
 		var config = new LabRecruitsConfig("buttons_doors_1");
@@ -109,14 +99,10 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		labRecruitsTestServer.startRecording(5, 4);
 
 		// create a test agent
-		var testAgent = new LabRecruitsTestAgent("agent1") // matches the ID in the CSV file
-				.attachState(new BeliefState())
-				.attachEnvironment(environment)
-				.setTestDataCollector(new TestDataCollector())
-				.attachSyntheticEventsProducer(new EventsProducer());
+		String agentId = "agent1";
+		LabRecruitsTestAgent testAgent = createAgentWithEventProducer(environment, agentId);
 
 		//init states
-		Map<Double, String> expectedSounds = new HashMap<>();
 
 		// define the testing-task:
 		var testingTask = SEQ(
@@ -149,6 +135,8 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 						(WorldEntity e) -> e.getBooleanProperty("isOpen")),
 				GoalLib.entityInCloseRange("door3")
 		);
+
+
 		// attaching the goal and testdata-collector
 		var dataCollector = new TestDataCollector();
 		testAgent.setTestDataCollector(dataCollector).setGoal(testingTask);
@@ -157,25 +145,10 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		environment.startSimulation(); // this will press the "Play" button in the game for you
 		//goal not achieved yet
 		assertFalse(testAgent.success());
-		int i = 0;
 		// keep updating the agent
-		while (testingTask.getStatus().inProgress()) {
-			if (ENABLE_VERBOSE_LOGGING)
-				System.out.println("*** " + i + ", " + testAgent.state().id + " @" + testAgent.state().worldmodel.position);
-			Thread.sleep(50);
-			i++;
-			testAgent.update();
-			List<WorldEntity> changes = testAgent.state().changedEntities;
-			if (changes.size() > 0) {
-				for (WorldEntity change : changes) {
-					System.out.println("_____Change: " + change);
-					addExpectedSound(expectedSounds, change);
-				}
-			}
-			if (i > 200) {
-				break;
-			}
-		}
+		var previousHp = 100;
+		Map<Double, String> expectedSounds =
+				progressTheAgentAndExtractExpectedSounds(environment, testAgent, testingTask);
 		testingTask.printGoalStructureStatus();
 
 		// check that we have passed both tests above:
@@ -185,6 +158,15 @@ public class RoomReachabilityAudioTest extends AudioAbstractTest {
 		// close
 		testAgent.printStatus();
 		return expectedSounds;
+	}
+
+
+	private static LabRecruitsTestAgent createAgentWithEventProducer(LabRecruitsEnvironment environment, String agentId) {
+		return new LabRecruitsTestAgent(agentId) // matches the ID in the CSV file
+				.attachState(new BeliefState())
+				.attachEnvironment(environment)
+				.setTestDataCollector(new TestDataCollector())
+				.attachSyntheticEventsProducer(new EventsProducer());
 	}
 
 
