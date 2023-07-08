@@ -6,6 +6,8 @@ public class AudioConfig {
     public static int FUZ_FACTOR = 2;
     public static float FALSE_POSITIVE_THRESHOLD = 0.3f;
 
+    public static boolean VERBOSE_LOGGING = false;
+
     /**
      * CHUNK_SIZE in terms of how many samples should be stored inside a chunk
      * <p>

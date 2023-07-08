@@ -9,6 +9,8 @@ import javax.sound.sampled.AudioFormat;
 import java.util.Map;
 import java.util.Set;
 
+import static config.audio.AudioConfig.VERBOSE_LOGGING;
+
 public class AudioSignal {
     private String name;
     private short[] samples;
@@ -24,14 +26,15 @@ public class AudioSignal {
         this.format = format;
         this.spectrogram = AudioAnalysis.evaluateSpectrogram(samples);
         this.fingerprint = AudioAnalysis.analyse(this);
-        System.out.println(
-                name + " loaded:" + samples.length +
-                        "\n\t- samples" + " ( = " + AudioAnalysis.getTimeOfSample(samples.length, format) + " seconds)" +
-                        "\n\t- generating " + fingerprint.size() + " fingerprints" +
-                        "\n\t- using a " + spectrogram.length + " chunks long spectrum" +
-                        "\n\t- with fuz factor of: " + AudioConfig.FUZ_FACTOR +
-                        String.format("\n\t- minimum chunk duration: %.3f  seconds", AudioConfig.getChunkDuration(this.format))
-        );
+        if (VERBOSE_LOGGING)
+            System.out.println(
+                    name + " loaded:" + samples.length +
+                            "\n\t- samples" + " ( = " + AudioAnalysis.getTimeOfSample(samples.length, format) + " seconds)" +
+                            "\n\t- generating " + fingerprint.size() + " fingerprints" +
+                            "\n\t- using a " + spectrogram.length + " chunks long spectrum" +
+                            "\n\t- with fuz factor of: " + AudioConfig.FUZ_FACTOR +
+                            String.format("\n\t- minimum chunk duration: %.3f  seconds", AudioConfig.getChunkDuration(this.format))
+            );
     }
 
     public String getName() {

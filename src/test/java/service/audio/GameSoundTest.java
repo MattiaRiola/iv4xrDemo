@@ -16,9 +16,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import static config.audio.AudioConfig.FALSE_POSITIVE_THRESHOLD;
 import static org.junit.jupiter.api.Assertions.*;
-import static utils.FileExplorer.DIR_GAME_RECORDS_SAVED;
-import static utils.FileExplorer.DIR_GAME_SOUNDS;
+import static utils.FileExplorer.*;
 
 public class GameSoundTest {
 
@@ -97,9 +97,9 @@ public class GameSoundTest {
 
     @Test
     public void inGameRecordWithMonsterSoundsComparisonTest() throws UnsupportedAudioFileException, IOException {
-        String reachabilityTestAudioFile = "MonsterAudioTestRecorded.wav";
+        String monsterAudioTestRecord = "MonsterAudioTestRecorded.wav";
 
-        AudioSignal reachabilityTestAudio = FileExplorer.readWavFile(DIR_GAME_RECORDS_SAVED + reachabilityTestAudioFile, reachabilityTestAudioFile);
+        AudioSignal reachabilityTestAudio = FileExplorer.readWavFile(DIR_GAME_RECORDS_SAVED + monsterAudioTestRecord, monsterAudioTestRecord);
         var matches = AudioAnalysis.searchMatch(reachabilityTestAudio);
         assertNotEquals(0, matches.size(), "no matches found");
 
@@ -131,6 +131,16 @@ public class GameSoundTest {
                 "filtered matches in that time window: " + AudioAnalysis.getMatchStat(matches4));
         Assertions.assertEquals("monsterattack.wav", monster_4,
                 "filtered matches in that time window: " + AudioAnalysis.getMatchStat(matches4));
+    }
+
+    @Test
+    public void testAudioAbsence() throws UnsupportedAudioFileException, IOException {
+        String reachabilityTestAudioFile = "RoomReachabilityAudioRecorded.wav";
+        fail("test used to implement ROC graph");
+        AudioSignal unkownSong = FileExplorer.readWavFile(DIR_SONG_RECORDS + reachabilityTestAudioFile, reachabilityTestAudioFile.toLowerCase());
+        Set<AudioMatch> matches = AudioAnalysis.searchMatch(unkownSong);
+        assertTrue(matches.size() < unkownSong.getSpectrogram().length * FALSE_POSITIVE_THRESHOLD, "matches found");
+
     }
 
 

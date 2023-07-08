@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static config.audio.AudioConfig.VERBOSE_LOGGING;
+
 public class FileExplorer {
 
     public static final String DIR_BASE_AUDIO_RES = "src/test/resources/audio/";
@@ -58,8 +60,10 @@ public class FileExplorer {
     }
 
     public static List<AudioSignal> readAllSoundsInFolder(String dir) throws IOException, UnsupportedAudioFileException {
-        System.out.println("#######################################");
-        System.out.println("READING FILE IN " + dir);
+        if (VERBOSE_LOGGING) {
+            System.out.println("#######################################");
+            System.out.println("READING FILE IN " + dir);
+        }
         List<String> soundFileNames = FileExplorer.listFilesUsingFilesList(dir);
         List<AudioSignal> res = new LinkedList<>();
         for (String soundFileName : soundFileNames) {
@@ -68,13 +72,15 @@ public class FileExplorer {
 
             res.add(audio);
         }
-        System.out.println("#######################################");
+        if (VERBOSE_LOGGING)
+            System.out.println("#######################################");
         return res;
     }
 
     public static AudioSignal readWavFile(String filePath, String name) throws IOException, UnsupportedAudioFileException {
         File file = new File(filePath);
-        System.out.println("Reading " + name + " ...");
+        if (VERBOSE_LOGGING)
+            System.out.println("Reading " + name + " ...");
         StopWatch stopWatch = new StopWatch();
         stopWatch.reset();
         stopWatch.start();
@@ -90,7 +96,8 @@ public class FileExplorer {
         //int byteRead = ais.read(eightBitByteArray);
 
         byte[] byteRead = ais.readAllBytes();
-        System.out.println("byte read: " + byteRead.length);
+        if (VERBOSE_LOGGING)
+            System.out.println("byte read: " + byteRead.length);
         int channels = ais.getFormat().getChannels();
         if (channels != 1)
             throw new UnsupportedAudioFileException("Audio " + file + " file must be mono" + " but it is " + ais.getFormat());
@@ -104,7 +111,8 @@ public class FileExplorer {
         AudioSignal res = new AudioSignal(name, samples, ais.getFormat());
         stopWatch.stop();
         long ms = stopWatch.getTime();
-        System.out.println("finished in " + ms + " ms : " + res);
+        if (VERBOSE_LOGGING)
+            System.out.println("finished in " + ms + " ms : " + res);
         return res;
 
     }

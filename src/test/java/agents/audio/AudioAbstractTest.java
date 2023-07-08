@@ -170,9 +170,10 @@ public abstract class AudioAbstractTest {
 
     }
 
-    static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException {
+    static Set<AudioMatch> getMatchesFromGameRecords() throws IOException, UnsupportedAudioFileException, InterruptedException {
 
         List<AudioSignal> gameRecords = FileExplorer.readAllSoundsInFolder(DIR_GAME_RECORDS);
+        //TODO: Wait that record is completed
         assertEquals(1, gameRecords.size(), "only one record is analysed");
         AudioSignal gameRecord = gameRecords.get(0);
 

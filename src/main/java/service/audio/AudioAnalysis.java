@@ -35,7 +35,8 @@ public class AudioAnalysis {
 
 
     public static Set<AudioMatch> searchMatch(AudioSignal input) {
-        System.out.println("Searching match for: " + input.getName());
+        if (VERBOSE_LOGGING)
+            System.out.println("Searching match for: " + input.getName());
         Set<AudioMatch> matches = new TreeSet<>(Comparator.comparing(m -> m.getInputChunk().time));
         Map<Long, Set<ChunkDetail>> inputFingerprintMap = input.getFingerprint();
 
@@ -237,6 +238,10 @@ public class AudioAnalysis {
 
         }
         return audiosWithOrderedChunkDetails;
+    }
+
+    public static void resetDb() {
+        fingerprintsDb.clear();
     }
 
     /**
