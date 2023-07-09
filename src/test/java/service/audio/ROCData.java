@@ -1,6 +1,6 @@
 package service.audio;
 
-public class ROGData {
+public class ROCData {
 
     private int truePositive = 0;
 
@@ -11,7 +11,7 @@ public class ROGData {
     private int trueNegative = 0;
 
     public static String getCSVHeader() {
-        return "Threshold,TPR,FPR\n";
+        return "Threshold,TPR,FPR";
     }
 
 

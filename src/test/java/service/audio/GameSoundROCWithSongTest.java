@@ -22,11 +22,11 @@ import static utils.FileExplorer.DIR_GAME_RECORDS_SAVED;
 import static utils.FileExplorer.DIR_GAME_SOUNDS;
 import static utils.SoundFileNames.*;
 
-public class GameSoundROGTest {
+public class GameSoundROCWithSongTest {
 
 
     static List<AudioSignal> readAudios = new LinkedList<>();
-    static final int MAX_THRESHOLD = 100;
+    static final int MAX_THRESHOLD = 50;
     static final double TIME_WINDOW_SIZE = 1d;
 
     @BeforeAll
@@ -46,61 +46,63 @@ public class GameSoundROGTest {
     }
 
     @Test
-    public void ROGDataExtraction() throws UnsupportedAudioFileException, IOException {
+    public void ROCDataExtraction() throws UnsupportedAudioFileException, IOException {
 
 
         AudioConfig.CHUNK_SIZE = 256;
-        for (int i = 1; i < 5; i++) {
-            String fileName = "ROGData_" + "CHUNKSIZE_" + AudioConfig.CHUNK_SIZE + "_FUZ_FACTOR_" + i + ".csv";
+        for (int i = 1; i < 0; i++) {
+            String fileName = "ROCData_" + "CHUNKSIZE_" + AudioConfig.CHUNK_SIZE + "_FUZ_FACTOR_" + i + ".csv";
             AudioConfig.FUZ_FACTOR = i;
             System.out.println("Audio config:\n\t- Chunk size: " + AudioConfig.CHUNK_SIZE + "\n\t- Fuz factor: " + AudioConfig.FUZ_FACTOR);
-            writeToCSV(fileName, evaluateRogPoints().toString());
+            writeToCSV(fileName, evaluateRocPoints().toString());
 
         }
         AudioConfig.CHUNK_SIZE = 512;
-        for (int i = 1; i < 5; i++) {
-            String fileName = "ROGData_" + "CHUNKSIZE_" + AudioConfig.CHUNK_SIZE + "_FUZ_FACTOR_" + i + ".csv";
+        for (int i = 4; i < 6; i++) {
+            String fileName = "ROCData_" + "CHUNKSIZE_" + AudioConfig.CHUNK_SIZE + "_FUZ_FACTOR_" + i + ".csv";
             AudioConfig.FUZ_FACTOR = i;
             System.out.println("Audio config:\n\t- Chunk size: " + AudioConfig.CHUNK_SIZE + "\n\t- Fuz factor: " + AudioConfig.FUZ_FACTOR);
-            writeToCSV(fileName, evaluateRogPoints().toString());
+            writeToCSV(fileName, evaluateRocPoints().toString());
 
         }
 
         AudioConfig.CHUNK_SIZE = 1024;
-        for (int i = 1; i < 5; i++) {
-            String fileName = "ROGData_" + "CHUNKSIZE_" + AudioConfig.CHUNK_SIZE + "_FUZ_FACTOR_" + i + ".csv";
+        for (int i = 1; i < 0; i++) {
+            String postfix = "CHUNKSIZE_" + AudioConfig.CHUNK_SIZE + "_FUZ_FACTOR_" + i;
+            String fileName = "ROCData_" + postfix + ".csv";
             AudioConfig.FUZ_FACTOR = i;
             System.out.println("Audio config:\n\t- Chunk size: " + AudioConfig.CHUNK_SIZE + "\n\t- Fuz factor: " + AudioConfig.FUZ_FACTOR);
-            System.out.println(evaluateRogPoints());
-            writeToCSV(fileName, evaluateRogPoints().toString());
+            System.out.println(evaluateRocPoints());
+            writeToCSV(fileName, evaluateRocPoints().toString());
 
         }
 
     }
 
-    private StringBuilder evaluateRogPoints() throws IOException, UnsupportedAudioFileException {
+    private StringBuilder evaluateRocPoints() throws IOException, UnsupportedAudioFileException {
 
         AudioAnalysis.resetDb();
         initDB();
         StringBuilder resStr = new StringBuilder();
-        resStr.append(ROGData.getCSVHeader()).append("\n");
+        String postfix = ", CHUNKSIZE_" + AudioConfig.CHUNK_SIZE + "_FUZ_FACTOR_" + AudioConfig.FUZ_FACTOR;
+        resStr.append(ROCData.getCSVHeader()).append(postfix).append("\n");
         for (int i = 0; i < MAX_THRESHOLD; i++) {
-            ROGData ROGData = evaluateROGDataForThatThreshold(i, TIME_WINDOW_SIZE);
+            ROCData ROCData = evaluateROCDataForThatThreshold(i, TIME_WINDOW_SIZE);
             // add res to the string
-            resStr.append(i).append(", ").append(ROGData.toCSVRate());
-            if (ROGData.getTruePositiveRate() == 0) {
+            resStr.append(i).append(", ").append(ROCData.toCSVRate());
+            if (ROCData.getTruePositiveRate() == 0) {
                 break;
             }
         }
         return resStr;
     }
 
-    private ROGData evaluateROGDataForThatThreshold(int threshold, double timeWindowSize) throws IOException, UnsupportedAudioFileException {
+    private ROCData evaluateROCDataForThatThreshold(int threshold, double timeWindowSize) throws IOException, UnsupportedAudioFileException {
 
-        ROGData ROGData = new ROGData();
+        ROCData ROCData = new ROCData();
 
-        String reachabilityTestAudioFile = "RoomReachabilityAudioRecorded.wav";
-        String monsterAudioTestRecord = "MonsterAudioTestRecorded.wav";
+        String reachabilityTestAudioFile = "RoomReachabilityAudioRecordedWithSong.wav";
+        String monsterAudioTestRecord = "MonsterAudioTestRecordedWithSong.wav";
         AudioSignal reachabilityTestAudio = FileExplorer.readWavFile(DIR_GAME_RECORDS_SAVED + reachabilityTestAudioFile, reachabilityTestAudioFile);
         AudioSignal monsterTestAudio = FileExplorer.readWavFile(DIR_GAME_RECORDS_SAVED + monsterAudioTestRecord, monsterAudioTestRecord);
         var matchesRR = AudioAnalysis.searchMatch(reachabilityTestAudio);
@@ -109,30 +111,30 @@ public class GameSoundROGTest {
 
         // Actual : sound is present? YES
 
-        evaluateWhenSoundIsPresent(threshold, timeWindowSize, ROGData, matchesRR, matchesM);
+        evaluateWhenSoundIsPresent(threshold, timeWindowSize, ROCData, matchesRR, matchesM);
 
 
         // Actual : sound is present? NO
 
-        evaluateWhenSoundIsAbsent(threshold, timeWindowSize, ROGData, matchesRR, matchesM);
+        evaluateWhenSoundIsAbsent(threshold, timeWindowSize, ROCData, matchesRR, matchesM);
 
 
-        return ROGData;
+        return ROCData;
     }
 
-    private static void evaluateWhenSoundIsAbsent(int threshold, double timeWindowSize, ROGData rogData, Set<AudioMatch> matchesRR, Set<AudioMatch> matchesM) {
+    private static void evaluateWhenSoundIsAbsent(int threshold, double timeWindowSize, ROCData ROCData, Set<AudioMatch> matchesRR, Set<AudioMatch> matchesM) {
 
         // silence
 
         FPandTNevaluation(
                 threshold,
-                rogData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 16.0d, timeWindowSize),
                 allSoundButOne("silence"));
 
         FPandTNevaluation(
                 threshold,
-                rogData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 3.5d, timeWindowSize),
                 allSoundButOne("silence"));
 
@@ -140,14 +142,14 @@ public class GameSoundROGTest {
 
         FPandTNevaluation(
                 threshold,
-                rogData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 1.6d, timeWindowSize),
                 allSoundButOne(FIRESIZZLE.getFileName()));
 
         // During Ding sound
         FPandTNevaluation(
                 threshold,
-                rogData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 5.0d, timeWindowSize),
                 allSoundButOne(DING1.getFileName()));
 
@@ -155,30 +157,30 @@ public class GameSoundROGTest {
 
         FPandTNevaluation(
                 threshold,
-                rogData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesM, 5.5d, timeWindowSize),
                 allSoundButOne(MONSTERATTACK.getFileName()));
         FPandTNevaluation(
                 threshold,
-                rogData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesM, 17.0d, timeWindowSize),
                 allSoundButOne(MONSTERATTACK.getFileName()));
 
         FPandTNevaluation(
                 threshold,
-                rogData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesM, 17.0d, timeWindowSize),
                 allSoundButOne(MONSTERATTACK.getFileName()));
 
 
     }
 
-    private static void evaluateWhenSoundIsPresent(int threshold, double timeWindowSize, ROGData ROGData, Set<AudioMatch> matchesRR, Set<AudioMatch> matchesM) {
+    private static void evaluateWhenSoundIsPresent(int threshold, double timeWindowSize, ROCData ROCData, Set<AudioMatch> matchesRR, Set<AudioMatch> matchesM) {
         // fire matchesRR
 
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 1.6d, timeWindowSize),
                 Set.of(FIRESIZZLE.getFileName()));
 
@@ -186,19 +188,19 @@ public class GameSoundROGTest {
 
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 5.0d, timeWindowSize),
                 Set.of(DING1.getFileName()));
 
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 10.5d, timeWindowSize),
                 Set.of(DING1.getFileName()));
 
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesRR, 13.25d, timeWindowSize),
                 Set.of(DING1.getFileName()));
 
@@ -207,57 +209,57 @@ public class GameSoundROGTest {
 
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesM, 3.0d, timeWindowSize),
                 Set.of(MONSTERATTACK.getFileName()));
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesM, 5.5d, timeWindowSize),
                 Set.of(MONSTERATTACK.getFileName()));
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesM, 7.5d, timeWindowSize),
                 Set.of(MONSTERATTACK.getFileName()));
         TPandFNevaluation(
                 threshold,
-                ROGData,
+                ROCData,
                 AudioAnalysis.getMatchesAtTime(matchesM, 17.0d, timeWindowSize),
                 Set.of(MONSTERATTACK.getFileName()));
     }
 
     /**
      * @param threshold      min match required to be considered a match
-     * @param ROGData        this object will be modified by the method adding false negative or true positive
+     * @param ROCData        this object will be modified by the method adding false negative or true positive
      * @param match          the set of matches to be evaluated
      * @param expectedSounds the sounds that are expected to be present in the match
      */
-    private static void TPandFNevaluation(int threshold, ROGData ROGData, Set<AudioMatch> match, Set<String> expectedSounds) {
+    private static void TPandFNevaluation(int threshold, ROCData ROCData, Set<AudioMatch> match, Set<String> expectedSounds) {
         Map<String, Integer> stat = AudioAnalysis.getMatchStat(match);
         for (String expectedSound : expectedSounds) {
             int numOfMatchesFound = stat.getOrDefault(expectedSound, 0);
             if (numOfMatchesFound < threshold)
-                ROGData.addFalseNegative();
+                ROCData.addFalseNegative();
             else
-                ROGData.addTruePositive();
+                ROCData.addTruePositive();
         }
     }
 
     /**
      * @param threshold        min match required to be considered a match
-     * @param ROGData          this object will be modified by the method adding true negative or false positive
+     * @param ROCData          this object will be modified by the method adding true negative or false positive
      * @param match            the set of matches to be evaluated
      * @param unexpectedSounds the sound that is unexpected to be present in the match
      */
-    private static void FPandTNevaluation(int threshold, ROGData ROGData, Set<AudioMatch> match, Set<String> unexpectedSounds) {
+    private static void FPandTNevaluation(int threshold, ROCData ROCData, Set<AudioMatch> match, Set<String> unexpectedSounds) {
         Map<String, Integer> stat = AudioAnalysis.getMatchStat(match);
         for (String unexpectedSound : unexpectedSounds) {
             int matchFound = stat.getOrDefault(unexpectedSound, 0);
             if (matchFound < threshold)
-                ROGData.addTrueNegative();
+                ROCData.addTrueNegative();
             else
-                ROGData.addFalsePositive();
+                ROCData.addFalsePositive();
         }
 
     }
